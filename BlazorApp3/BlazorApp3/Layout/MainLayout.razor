@@ -1,0 +1,81 @@
+﻿@inherits LayoutComponentBase
+@using BlazorApp3.Client.Modules
+@using BlazorBootstrap
+
+<div class="bb-page">
+    @if(AdaptiveClass.IsDarkTheme)
+    {<Sidebar @ref="sidebar"
+             Style="background-color:#333"
+             IconName="IconName.BootstrapFill"
+             Title="Blazor Bootstrap"
+        DataProvider="SidebarDataProvider" />
+    }
+    else
+    {
+        <Sidebar @ref="sidebar"
+                  Style="background-color:#fcfcfc"
+                  IconName="IconName.BootstrapFill"
+                  Title="Blazor Bootstrap"
+                  DataProvider="SidebarDataProvider" />
+        
+    }
+
+    <main style="background-color:@(AdaptiveClass.IsDarkTheme ? "#333" : "#f9f9f9")">
+        <div class="bb-top-row px-4 d-flex justify-content-end" style="background-color:@(AdaptiveClass.IsDarkTheme ? "#242424" : "#fcfcfc");border-block-color:@(AdaptiveClass.IsDarkTheme ? "#171717" : "#d4d4d4");">
+            <Button Class="p-0 d-flex flex-wrap align-content-center h-50" @onclick="OnThemeUpdate">
+                @if (AdaptiveClass.IsDarkTheme)
+                {
+                    <img class="h-100" src="icon/sunicon.png" />
+                }
+                else
+                {
+                    <img class="h-100" src="icon/moonicon.png" />
+                }
+            </Button>
+        </div>
+
+        <article class="content px-4">
+            <div class="py-2">@Body</div>
+        </article>
+    </main>
+
+</div>
+
+@code {
+    Sidebar sidebar;
+    IEnumerable<NavItem> navItems;
+
+    public void  OnThemeUpdate()
+    {
+        Console.WriteLine(AdaptiveClass.IsDarkTheme);
+        AdaptiveClass.IsDarkTheme = !AdaptiveClass.IsDarkTheme;
+        StateHasChanged();
+        Console.WriteLine(AdaptiveClass.IsDarkTheme);
+    }
+
+    private async Task<SidebarDataProviderResult> SidebarDataProvider(SidebarDataProviderRequest request)
+    {
+        if (navItems is null)
+            navItems = GetNavItems();
+
+        return await Task.FromResult(request.ApplyTo(navItems));
+    }
+
+    private IEnumerable<NavItem> GetNavItems()
+    {
+        navItems = new List<NavItem>
+                   {
+                      
+                   };
+
+        return navItems;
+    }
+
+    
+}
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
