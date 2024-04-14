@@ -3,22 +3,6 @@
 @using BlazorBootstrap
 
 <div class="bb-page">
-    @if(AdaptiveClass.IsDarkTheme)
-    {<Sidebar @ref="sidebar"
-             Style="background-color:#333"
-             IconName="IconName.BootstrapFill"
-             Title="Blazor Bootstrap"
-        DataProvider="SidebarDataProvider" />
-    }
-    else
-    {
-        <Sidebar @ref="sidebar"
-                  Style="background-color:#fcfcfc"
-                  IconName="IconName.BootstrapFill"
-                  Title="Blazor Bootstrap"
-                  DataProvider="SidebarDataProvider" />
-        
-    }
 
     <main style="background-color:@(AdaptiveClass.IsDarkTheme ? "#333" : "#f9f9f9")">
         <div class="bb-top-row px-4 d-flex justify-content-end" style="background-color:@(AdaptiveClass.IsDarkTheme ? "#242424" : "#fcfcfc");border-block-color:@(AdaptiveClass.IsDarkTheme ? "#171717" : "#d4d4d4");">
@@ -42,8 +26,6 @@
 </div>
 
 @code {
-    Sidebar sidebar;
-    IEnumerable<NavItem> navItems;
 
     public void  OnThemeUpdate()
     {
@@ -53,23 +35,7 @@
         Console.WriteLine(AdaptiveClass.IsDarkTheme);
     }
 
-    private async Task<SidebarDataProviderResult> SidebarDataProvider(SidebarDataProviderRequest request)
-    {
-        if (navItems is null)
-            navItems = GetNavItems();
 
-        return await Task.FromResult(request.ApplyTo(navItems));
-    }
-
-    private IEnumerable<NavItem> GetNavItems()
-    {
-        navItems = new List<NavItem>
-                   {
-                      
-                   };
-
-        return navItems;
-    }
 
     
 }

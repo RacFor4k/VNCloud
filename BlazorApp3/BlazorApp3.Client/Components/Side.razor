@@ -1,0 +1,43 @@
+﻿@using Modules
+
+
+@if(AdaptiveClass.IsDarkTheme)
+    {<Sidebar @ref="sidebar"
+             Style="background-color:#333"
+             IconName="IconName.BootstrapFill"
+             Title="Blazor Bootstrap"
+        DataProvider="SidebarDataProvider" />
+    }
+    else
+    {
+        <Sidebar @ref="sidebar"
+                  Style="background-color:#fcfcfc"
+                  IconName="IconName.BootstrapFill"
+                  Title="Blazor Bootstrap"
+                  DataProvider="SidebarDataProvider" />
+        
+    }
+
+@code {
+    Sidebar sidebar;
+    IEnumerable<NavItem> navItems;
+
+
+    private async Task<SidebarDataProviderResult> SidebarDataProvider(SidebarDataProviderRequest request)
+    {
+        if (navItems is null)
+            navItems = GetNavItems();
+
+        return await Task.FromResult(request.ApplyTo(navItems));
+    }
+
+    private IEnumerable<NavItem> GetNavItems()
+    {
+        navItems = new List<NavItem>
+        {
+
+        };
+
+        return navItems;
+    }
+}
