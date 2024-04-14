@@ -7,6 +7,7 @@ using System.Data;
 using System.Security.Policy;
 using System.Text;
 using Newtonsoft.Json.Linq;
+using Microsoft.AspNetCore.Mvc;
 
 
 
@@ -26,7 +27,10 @@ namespace BlazorApp3.Modules
         public static async Task<List<AccountModel>> SearchAllData()
         {
             string sql = "select * from accounts;";
-            return await _data.LoadData<AccountModel, dynamic>(sql, new { }, _config);
+            var temp = _data.LoadData<AccountModel, dynamic>(sql, new { }, _config);
+            if (temp.Result.Count == 0)
+                throw (new Exception("nothing found"));
+            return temp.Result;
         }
         /// <summary>
         /// Возвращает данные аккаунта по логину
@@ -35,7 +39,10 @@ namespace BlazorApp3.Modules
         /// <returns></returns>
         public static async Task<List<AccountModel>> SearchData(byte[] login) {
             string sql = "select * from accounts where login=@login;";
-            return await _data.LoadData<AccountModel, dynamic>(sql, new { }, _config);
+            var temp = _data.LoadData<AccountModel, dynamic>(sql, new { }, _config);
+            if (temp.Result.Count == 0)
+                throw (new Exception("nothing found"));
+            return temp.Result;
         }
         /// <summary>
         /// Возвращает пути по ID владельца
@@ -45,7 +52,10 @@ namespace BlazorApp3.Modules
         public static async Task<List<RoutesModel>> SearchData(int parentId)
         {
             string sql = "select * from routes where parentId=@parentId;";
-            return await _data.LoadData<RoutesModel, dynamic>(sql, new { parentId }, _config);
+            var temp = _data.LoadData<RoutesModel, dynamic>(sql, new { parentId }, _config);
+            if (temp.Result.Count == 0)
+                throw (new Exception("nothing found"));
+            return temp.Result;
         }
         /// <summary>
         /// Добавляет аккаунт в базу данных(возвращает строку с ошибкой, если не получилось)
@@ -59,7 +69,7 @@ namespace BlazorApp3.Modules
             {
                 string sql = "insert into accounts (login, email) values (@login, @email);";
                 await _data.SaveData(sql, new { login, email }, _config);
-                return "";
+                return null;
             }
             catch (Exception ex)
             {
@@ -72,13 +82,13 @@ namespace BlazorApp3.Modules
         /// <param name="idParent"></param>
         /// <param name="url"></param>
         /// <returns></returns>
-        public static async Task<string> CreateData(int idParent, string url)
+        public static async Task<string> CreateData(int idParent, string url, bool isFolder = false)
         {
             try
             {
-                string sql = "insert into routes (idParent, url) values (@idParent, @url);";
-                await _data.SaveData(sql, new { idParent, url }, _config);
-                return "";
+                string sql = "insert into routes (idParent, url, isFolder) values (@idParent, @url, @isFolder);";
+                await _data.SaveData(sql, new { idParent, url, isFolder}, _config);
+                return null;
 
             }
             catch (Exception ex)
@@ -99,7 +109,7 @@ namespace BlazorApp3.Modules
             {
                 string sql = $"delete from {nametable} where id = @id;";
                 await _data.SaveData(sql, new { id }, _config);
-                return "";
+                return null;
             }
             catch (Exception ex)
             {
