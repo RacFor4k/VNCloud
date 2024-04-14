@@ -7,7 +7,7 @@ namespace BlazorApp3.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GmailController : ControllerBase
+    public class GmailController : ControllerBase 
     {
         [HttpGet("{mail}/{key}")]
         public async Task<IActionResult> SendMail(string mail, string key)
