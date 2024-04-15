@@ -15,13 +15,7 @@ namespace BlazorApp3.Controllers
         private byte[] key = SHA256.HashData(Encoding.UTF8.GetBytes("123"));
         string host = "localhost:";
 
-        [HttpGet("Link/{login}")]
-        public async Task<IActionResult> Link(string login) {
-            login = EncryptionHelper.DecryptString(login,key);
-
-                }
-
-        [HttpGet("{mail}/{login}")]
+        [HttpPost("sendMail/{mail}/{login}")]
         public async Task<IActionResult> SendMail(string mail, string login)
         {
             System.Security.Cryptography.Aes aes = System.Security.Cryptography.Aes.Create(); 
