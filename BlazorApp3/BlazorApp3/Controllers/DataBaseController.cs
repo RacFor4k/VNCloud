@@ -21,6 +21,18 @@ namespace BlazorApp3.Controllers
             return StatusCode(200);
         }
 
+        [HttpGet("Login")]
+        public async Task<IActionResult> Login()
+        {
+            JsonNode json = JsonSerializer.Deserialize<JsonNode>(Request.Body);
+            byte[] login = Base64UrlTextEncoder.Decode(json["login"].ToString());
+            List<Models.AccountModel> i = new List<Models.AccountModel>();
+            if ((i = await SQLquery.SearchData(login)) != null) {
+                return Ok(/*token*/);
+            }
+            return StatusCode(404);
+        }
+
         [HttpPut("CreateData/{ParentID}/{Url}")]
         public async Task<IActionResult> CreateData(string ParentID, string URL)
         {
