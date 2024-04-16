@@ -27,6 +27,7 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = false
     };
 });
+//builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 //builder.Services.AddAuthentication(Jwt  ).AddJwtBearer()
 
 builder.Services.AddBlazorBootstrap();
