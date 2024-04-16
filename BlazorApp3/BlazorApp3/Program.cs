@@ -1,5 +1,7 @@
 using BlazorApp3.Client.Pages;
 using BlazorApp3.Components;
+using BlazorApp3.Modules;
+using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +10,11 @@ builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddControllers();
+builder.Services.AddScoped<AuthenticationDataMemoryStorage>();
+builder.Services.AddScoped<VNCloudUserService>();
+builder.Services.AddScoped<VNCloudAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<VNCloudAuthenticationStateProvider>());
+builder.Services.AddAuthorizationCore();
 
 var app = builder.Build();
 
