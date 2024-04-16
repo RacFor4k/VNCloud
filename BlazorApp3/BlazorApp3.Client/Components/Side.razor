@@ -1,22 +1,24 @@
-﻿@using Modules
+﻿@rendermode InteractiveWebAssembly
+@using Modules
 
 
-@if(AdaptiveClass.IsDarkTheme)
-    {<Sidebar @ref="sidebar"
-             Style="background-color:#333"
+@if (AdaptiveClass.IsDarkTheme)
+{
+    <Sidebar @ref="sidebar"
+             Style="background-color:#333;border-color:black;"
              IconName="IconName.BootstrapFill"
              Title="Blazor Bootstrap"
-        DataProvider="SidebarDataProvider" />
-    }
-    else
-    {
-        <Sidebar @ref="sidebar"
-                  Style="background-color:#fcfcfc"
-                  IconName="IconName.BootstrapFill"
-                  Title="Blazor Bootstrap"
-                  DataProvider="SidebarDataProvider" />
-        
-    }
+             DataProvider="SidebarDataProvider" />
+}
+else
+{
+    <Sidebar @ref="sidebar"
+             Style="background-color:#fcfcfc;"
+             IconName="IconName.BootstrapFill"
+             Title="Blazor Bootstrap"
+             DataProvider="SidebarDataProvider" />
+
+}
 
 @code {
     Sidebar sidebar;
@@ -35,7 +37,7 @@
     {
         navItems = new List<NavItem>
         {
-
+            new NavItem { Id = "1", Href = "/", IconName = IconName.HouseDoorFill, Text = "Home", Match=NavLinkMatch.All},
         };
 
         return navItems;

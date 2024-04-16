@@ -1,9 +1,10 @@
 ﻿@inherits LayoutComponentBase
 @using BlazorApp3.Client.Modules
+@using BlazorApp3.Client.Components
 @using BlazorBootstrap
 
 <div class="bb-page">
-
+    @*<Side/>*@
     <main style="background-color:@(AdaptiveClass.IsDarkTheme ? "#333" : "#f9f9f9")">
         <div class="bb-top-row px-4 d-flex justify-content-end" style="background-color:@(AdaptiveClass.IsDarkTheme ? "#242424" : "#fcfcfc");border-block-color:@(AdaptiveClass.IsDarkTheme ? "#171717" : "#d4d4d4");">
             <Button Class="p-0 d-flex flex-wrap align-content-center h-50" @onclick="OnThemeUpdate">

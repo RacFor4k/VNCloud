@@ -2,6 +2,6 @@
 {
     public static class AdaptiveClass
     {
-        public static bool IsDarkTheme = true;
+        public static bool IsDarkTheme = false;
     }
 }
