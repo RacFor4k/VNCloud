@@ -3,18 +3,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using BlazorApp3.Modules;
 using Mysqlx.Crud;
+using System.Text.Json.Nodes;
+using System.Text.Json;
 namespace BlazorApp3.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class DataBaseController : ControllerBase
     {
-        [HttpPut("CreateAccount/{Login}/{Email}/{token}")]
-        public async Task<IActionResult> CreateAccount(string Login, string Email, string token)
+        [HttpPut("CreateAccount")]
+        public async Task<IActionResult> CreateAccount()
         {
-            
-            byte[] login = Base64UrlTextEncoder.Decode(Login);
-            string email = Base64Url.Decode(Email);
+            JsonNode json = JsonSerializer.Deserialize<JsonNode>(Request.Body);
+            byte[] login = Base64UrlTextEncoder.Decode(json["login"].ToString());
+            string email = Base64Url.Decode(json["Email"].ToString());
             if(SQLquery.CreateData(login, email)!=null) return StatusCode(StatusCodes.Status409Conflict);
             return StatusCode(200);
         }
