@@ -15,14 +15,16 @@ namespace BlazorApp3.Controllers
         private byte[] key = SHA256.HashData(Encoding.UTF8.GetBytes("123"));
         string host = "localhost:";
 
-        [HttpPost("sendMail/{mail}/{login}")]
-        public async Task<IActionResult> SendMail(string mail, string login)
+        [HttpPost("sendMail")]
+        public async Task<IActionResult> SendMail()
         {
+            JsonNode json = JsonSerializer.Deserialize<JsonNode>(Request.Body);
+
             System.Security.Cryptography.Aes aes = System.Security.Cryptography.Aes.Create(); 
             aes.Mode = CipherMode.CBC;
             aes.Key = key;
             aes.GenerateIV();
-            string link = host + "/api/Link/" + EncryptionHelper.EncryptString(login, key);
+            string link = host + "/api/Link/" + key);
             string body;
             using (FileStream fs = new FileStream("GmailAPI/GmailAttachment/gmailReqest.html", FileMode.Open))
             {
