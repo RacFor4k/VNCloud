@@ -1,6 +1,7 @@
 ﻿using BlazorApp3.Components.Pages;
 using BlazorApp3.Models;
 using BlazorApp3.Modules;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
@@ -13,6 +14,7 @@ namespace BlazorApp3.Controllers
     {
         private const string host = "C:/Prifiles";
         [HttpPost("UploadFile/{Path}/{Login}/{Token}")]
+        [Authorize]
         public async Task<IActionResult> UploadFile(string Path, string Login, string Token)
         {
             string path;
@@ -62,6 +64,7 @@ namespace BlazorApp3.Controllers
         }
 
         [HttpPost("CreateFolder/{Path}/{Login}/{Token}")]
+        [Authorize]
         public async Task<IActionResult> CreateFolder(string Path, string Login, string Token)
         {
             string path;

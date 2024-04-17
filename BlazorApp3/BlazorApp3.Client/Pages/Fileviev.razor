@@ -1,0 +1,166 @@
+﻿@page "/cloud"
+@rendermode InteractiveWebAssembly
+@inject IJSRuntime JSRuntime
+
+@using System.IO
+@using Microsoft.AspNetCore.Components.Forms
+
+<Modal @ref="modal" Title="Modal title">
+    <BodyTemplate>
+        <InputText @bind-Value="newFileName" class="mt-3 form-control" placeholder="Введите новое имя..."/>
+    </BodyTemplate>
+    <FooterTemplate>
+        <Button Color="ButtonColor.Secondary" @onclick="OnHideModalClick">Закрыть</Button>
+        <Button Color="ButtonColor.Primary" @onclick="RenameFile">Сохранить имя</Button>
+    </FooterTemplate>
+</Modal>
+
+<Toasts class="p-3" Messages="messages" Placement="ToastsPlacement.BottomLeft" />
+<div >
+    <a class="d-inline h-5" style="text-decoration:none;"> Cloud </a>
+    @foreach (var route in routes.Split('/'))
+    {
+        
+        <a class="d-inline h-5" style="text-decoration:none;"> @route </a>
+        <p class="d-inline h-5" style="text-decoration:none;"> > </p>
+    }
+    
+</div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Имя файла</th>
+                    <th class="text-right">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var file in files)
+                {
+                    <tr class="rounded-lg" @ondblclick="()=>DbClikOnFile(file)">
+                        <td class="rounded-lg align-middle h5"><Icon Name="@(file.isFolder ? IconName.Folder2: IconName.FileEarmark)"/>  @file.Name</td>
+
+                        <td class="d-flex justify-content-end">
+                            <Button class="mr-5" @onclick="@(() => DownloadFile(file))">
+                                <Icon Name="IconName.Download"/>
+                            </Button>
+                            <Button class="mr-5" @onclick="@(() => EditFile(file))">
+                                <Icon Name="IconName.PencilSquare"/>
+                            </Button>
+                            <Button class="mr-5" @onclick="@(() => DeleteFile(file))">
+                                <Icon Name="IconName.Trash3"/>
+                            </Button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+
+@code {
+    private IList<FileInfo> files = new List<FileInfo>()
+    {
+        new FileInfo("dfdf/sdd.ffr"),new FileInfo("dfdf/sdddg"), new FileInfo("dfdf/sdd.exe")
+    };
+    private Modal modal = default!;
+    private string routes = "";
+
+    private FileInfo currentFile;
+    private string newFileName;
+
+    private async Task EditFile(FileInfo file)
+    {
+        currentFile = file;
+        newFileName = file.Name.Split('.')[0];// Открыть модальное окно для ввода нового имени файла
+        await modal.ShowAsync();
+    }
+
+    private async Task OnHideModalClick()
+    {
+        await modal.HideAsync();
+    }
+
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(string name) => messages.Add(new ToastMessage
+        {
+            Type = ToastType.Secondary,
+            Title = "Файл был удалён",
+            HelpText = $"",
+            Message = $"Файл {name} был удалён",
+        });
+
+    private void DownloadFile(FileInfo file)
+    {
+        // Здесь должен быть код для скачивания файла
+    }
+
+    private void DeleteFile(FileInfo file)
+    {
+        files.Remove(file);
+        ShowMessage(file.Name);
+        // Здесь должен быть код для удаления файла
+    }
+
+    private void DbClikOnFile(FileInfo file)
+    {
+        if (file.isFolder)
+        {
+            //TODO: обработку перехода по файлам
+            routes = file.Road;
+            files = new List<FileInfo>()
+            {
+                new FileInfo("dfdf/sdddg/sex.phg"),new FileInfo("dfdf/sdddg/folder"), new FileInfo("dfdf/sdddg/furry.exe")
+            };
+        }
+        else
+        {
+            DownloadFile(file);
+        }
+    }
+
+    private async Task RenameFile()
+    {
+        // Здесь должен быть код для переименования файла на сервере
+        // Например, отправка запроса на API для переименования файла
+        // После успешного переименования обновить список файлов
+        if (currentFile.isFolder)
+        {
+            currentFile.Name = newFileName;
+        }
+        else
+        {
+            currentFile.Name = newFileName + '.' + currentFile.Name.Split('.')[1];
+        }
+        Console.WriteLine(currentFile.Name);
+        UpdateFilesList();
+        await modal.HideAsync();
+    }
+    private void UpdateFilesList()
+    {
+        // Обновить список файлов после переименования
+    }
+
+    public class FileInfo
+    {
+        public string Name { get; set; }
+        public bool isFolder { get; set; }
+        public string Road { get; set; }
+        // Другие свойства файла
+        public FileInfo(string road){
+            Road = road.Split("dfdf")[1];
+            int ls = road.LastIndexOf('/');
+            Name = road.Substring(++ls, road.Length-ls);
+            isFolder = false; 
+            if (Name.IndexOf('.') == -1){
+                isFolder = true;
+                
+            }
+
+        }
+    }
+}
+
+

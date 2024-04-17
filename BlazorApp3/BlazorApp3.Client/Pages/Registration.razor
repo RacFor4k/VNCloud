@@ -1,0 +1,165 @@
+﻿
+
+@page "/registration"
+@rendermode InteractiveWebAssembly
+@using Modules
+@using System.ComponentModel.DataAnnotations;
+
+<PageTitle>Authenticetion</PageTitle>
+
+<div Class="d-flex justify-content-center align-items-center">
+    <Toasts class="p-3" Messages="messages" Placement="ToastsPlacement.TopRight" />
+    @if (AdaptiveClass.IsDarkTheme)
+    {
+        <Card Style
+        ="width:600px;background-color: #e3e3e3" Class
+        ="p-5">
+            <h2 class="m-auto">Регистрация</h2>
+
+
+            <div class="d-flex flex-column">
+                <EditForm Model="@registerModel" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <InputText @bind-Value="registerModel.Login" class="mt-3 form-control" style="background-color:#f0f0f0" type="login" placeholder="Введите логин"></InputText>
+                    <InputText @bind-Value="registerModel.Email" class="mt-3 form-control" style="background-color:#f0f0f0" type="email" placeholder="Введите почту"></InputText>
+                    <InputText @bind-Value="registerModel.Password" class="mt-3 form-control" style="background-color:#f0f0f0" type="password" placeholder="Введите пароль"></InputText>
+
+                    <div class="d-flex justify-content-between mt-3 ps-3 pe-3">
+                        <div>
+                            Есть аккаунта? <NavLink href="/authenticetion" style="text-decoration:none;font-weight:600">Войдите!</NavLink>
+                            <ValidationSummary />
+                        </div>
+                        <div class="d-flex flex-wrap align-content-end">
+                            <Button Color="ButtonColor.Success" class="w-auto ms-auto" @onclick="OnShowModalClick">Войти</Button>
+                        </div>
+                    </div>
+
+                </EditForm>
+            </div>
+
+        </Card>
+    }
+    else
+    {
+        <Card Style="width:600px;background-color: #f3f3f3" Class="p-5">
+            <h2 class="m-auto">Авторизация</h2>
+            <div class="d-flex flex-column">
+                <EditForm Model="@registerModel" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <InputText @bind-Value="registerModel.Login" class="mt-3 form-control" style="background-color:#f9f9f9" type="login" placeholder="Введите логин"></InputText>
+                    <InputText @bind-Value="registerModel.Email" class="mt-3 form-control" style="background-color:#f9f9f9" type="email" placeholder="Введите почту"></InputText>
+                    <InputText @bind-Value="registerModel.Password" class="mt-3 form-control" style="background-color:#f9f9f9" type="password" placeholder="Введите пароль"></InputText>
+                    <div class="d-flex justify-content-between mt-3 ps-3 pe-3">
+                        <div>
+                            Есть Аккаунт? <NavLink href="/authenticetion" style="text-decoration:none;font-weight:600">Войдите!</NavLink>
+                            <ValidationSummary />
+                        </div>
+                        <div class="d-flex flex-wrap align-content-end">
+                            <Button Color="ButtonColor.Success" class="w-auto ms-auto" @onclick="OnClickAuth">Войти</Button>
+                        </div>
+                    </div>
+                </EditForm>
+                <Button Color="ButtonColor.Success" class="w-auto ms-auto" onclick="@OnShowModalClick">Войти</Button>
+            </div>
+        </Card>
+    }
+</div>
+
+
+<Modal @ref="modal" title="Проверочный код" IsVerticallyCentered="true">
+    <BodyTemplate>
+        <p>Вам на почту отправлен код активации, введите его сюда</p>
+        <EditForm Model="@keyModel" OnValidSubmit="@HandleValidKey">
+            <DataAnnotationsValidator />
+            <InputText @bind-Value="keyModel.Vkey" class="mt-3 form-control" type="key" placeholder="Введите код..."/>
+            <ValidationSummary />    
+        </EditForm>
+    </BodyTemplate>
+    <FooterTemplate>
+
+        <Button Color="ButtonColor.Primary" @onclick= "OnHideModalClick">Проверить</Button>
+    </FooterTemplate>
+</Modal>
+
+@code {
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType) => messages.Add(CreateToastMessage(toastType));
+
+    private ToastMessage CreateToastMessage(ToastType toastType)
+    {
+        if(toastType == ToastType.Success)
+        {
+            return new ToastMessage
+                {
+                    Type = toastType,
+                    Title = "Регистрация пройдена успешно",
+                    HelpText = $"",
+                    Message = $"Спасибо что зарегистрировались!",
+                };
+
+        }
+        return new ToastMessage
+            {
+                Type = toastType,
+                Title = "Регистрация не пройдена",
+                HelpText = $"",
+                Message = $"Видимо вы неправильно ввели код или указали не ту почту",
+            };
+
+        }
+
+
+    private Modal modal = default!;
+
+    private async Task HandleValidKey()
+    {
+        // Обработка регистрации
+    }
+    public class KeyModel
+    {
+        [Required(ErrorMessage = "Введите код")]
+        [StringLength(6, ErrorMessage = "Код должен быть {1} символов", MinimumLength = 6)]
+        public string Vkey { get; set; }
+    }
+    KeyModel keyModel = new KeyModel();
+    private async Task OnShowModalClick()
+    {
+        await modal.ShowAsync();
+    }
+
+    private async Task OnHideModalClick()
+    {
+        ShowMessage(ToastType.Success);
+        await modal.HideAsync();
+    }
+    
+    private async Task HandleValidSubmit()
+    {
+        // Обработка регистрации
+    }
+public class RegisterModel
+{
+    [Required(ErrorMessage = "Введите логин")]
+    [StringLength(100, ErrorMessage = "Логин должен быть от {2} до {1} символов", MinimumLength = 3)]
+    public string Login { get; set; }
+
+    [Required(ErrorMessage = "Введите email")]
+    [EmailAddress(ErrorMessage = "Некорректный адрес email")]
+    public string Email { get; set; }
+
+    [Required(ErrorMessage = "Введите пароль")]
+    [StringLength(100, ErrorMessage = "Пароль должен быть от {2} до {1} символов", MinimumLength = 8)]
+    public string Password { get; set; }
+}
+    RegisterModel registerModel = new RegisterModel();
+
+
+    Card card;
+    private async Task OnClickAuth()
+    {
+        //some functional
+    }
+
+}

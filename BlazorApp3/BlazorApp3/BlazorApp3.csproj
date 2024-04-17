@@ -10,7 +10,10 @@
     <ProjectReference Include="..\..\DataLibrary\DataLibrary.csproj" />
     <ProjectReference Include="..\BlazorApp3.Client\BlazorApp3.Client.csproj" />
     <PackageReference Include="Google.Apis.Gmail.v1" Version="1.67.0.3287" />
+    <PackageReference Include="Microsoft.AspNetCore.ApiAuthorization.IdentityServer" Version="7.0.18" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.4" />
+    <PackageReference Include="Blazor.Bootstrap" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />

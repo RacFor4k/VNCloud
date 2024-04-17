@@ -1,0 +1,53 @@
+﻿@page "/authenticetion"
+@rendermode InteractiveWebAssembly
+@using Modules
+
+<PageTitle>Authenticetion</PageTitle>
+
+<div Class="d-flex justify-content-center align-items-center">
+    @if (AdaptiveClass.IsDarkTheme)
+    {
+        <Card Style="width:600px;background-color: #e3e3e3" Class="p-5">
+            <h2 class="m-auto">Авторизация</h2>
+            <div class="d-flex flex-column">
+                <InputText @bind-Value="login" class="mt-3 form-control" style="background-color:#f0f0f0" type="login" placeholder="Введите логин"></InputText>
+                <InputText @bind-Value="password" class="mt-3 form-control" style="background-color:#f0f0f0" type="password" placeholder="Введите пароль"></InputText>
+                <div class="d-flex justify-content-between mt-3 ps-3 pe-3">
+                    <div>
+                        Нет аккаунта? <NavLink href="/registration" style="text-decoration:none;font-weight:600">Зарегистрируйся!</NavLink>
+                    </div>
+                    <Button Color="ButtonColor.Success" class="w-auto ms-auto" @onclick="OnClickAuth">Войти</Button>
+                </div>
+            </div>
+        </Card>
+    }
+    else
+    {
+        <Card Style="width:600px;background-color: #f3f3f3" Class="p-5">
+            <h2 class="m-auto">Авторизация</h2>
+            <div class="d-flex flex-column">
+                <InputText @bind-Value="login" class="mt-3 form-control" style="background-color:#f9f9f9" type="login" placeholder="Введите логин"></InputText>
+                <InputText @bind-Value="password" class="mt-3 form-control" style="background-color:#f9f9f9" type="password" secureTextEntry="true" placeholder="Введите пароль"></InputText>
+                <div class="d-flex justify-content-between mt-3 ps-3 pe-3">
+                    <div>
+                        Нет аккаунта? <NavLink href="/registration" style="text-decoration:none;font-weight:600">Зарегистрируйся!</NavLink>
+                    </div>
+                    <Button Color="ButtonColor.Success" class="w-auto ms-auto" @onclick="OnClickAuth">Войти</Button>
+                </div>
+            </div>
+        </Card>
+        
+    }
+
+</div>
+
+@code {
+    Card card;
+    private string? login;
+    private string? password;
+    private async Task OnClickAuth()
+    {
+        //some functional
+    }
+
+}
