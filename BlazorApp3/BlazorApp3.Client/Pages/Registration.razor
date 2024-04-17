@@ -2,8 +2,11 @@
 
 @page "/registration"
 @rendermode InteractiveWebAssembly
+@inject IJSRuntime JS
 @using Modules
 @using System.ComponentModel.DataAnnotations;
+@using System.Text
+@using System.Security.Cryptography
 
 <PageTitle>Authenticetion</PageTitle>
 
@@ -31,7 +34,7 @@
                             <ValidationSummary />
                         </div>
                         <div class="d-flex flex-wrap align-content-end">
-                            <Button Color="ButtonColor.Success" class="w-auto ms-auto" @onclick="OnShowModalClick">Войти</Button>
+                            <Button Type="ButtonType.Submit" Color="ButtonColor.Success" class="w-auto ms-auto">Войти</Button>
                         </div>
                     </div>
 
@@ -43,7 +46,7 @@
     else
     {
         <Card Style="width:600px;background-color: #f3f3f3" Class="p-5">
-            <h2 class="m-auto">Авторизация</h2>
+            <h2 class="m-auto">Регистрация</h2>
             <div class="d-flex flex-column">
                 <EditForm Model="@registerModel" OnValidSubmit="@HandleValidSubmit">
                     <DataAnnotationsValidator />
@@ -56,11 +59,11 @@
                             <ValidationSummary />
                         </div>
                         <div class="d-flex flex-wrap align-content-end">
-                            <Button Color="ButtonColor.Success" class="w-auto ms-auto" @onclick="OnClickAuth">Войти</Button>
+                            <Button Type="ButtonType.Submit" Color="ButtonColor.Success" class="w-auto ms-auto">Войти</Button>
                         </div>
                     </div>
                 </EditForm>
-                <Button Color="ButtonColor.Success" class="w-auto ms-auto" onclick="@OnShowModalClick">Войти</Button>
+                
             </div>
         </Card>
     }
@@ -85,6 +88,7 @@
 @code {
     List<ToastMessage> messages = new List<ToastMessage>();
 
+
     private void ShowMessage(ToastType toastType) => messages.Add(CreateToastMessage(toastType));
 
     private ToastMessage CreateToastMessage(ToastType toastType)
@@ -108,7 +112,7 @@
                 Message = $"Видимо вы неправильно ввели код или указали не ту почту",
             };
 
-        }
+    }
 
 
     private Modal modal = default!;
@@ -134,10 +138,13 @@
         ShowMessage(ToastType.Success);
         await modal.HideAsync();
     }
-    
+
     private async Task HandleValidSubmit()
     {
-        // Обработка регистрации
+        Modules.Encoder encoder = new Modules.Encoder(JS, SHA256.HashData(Encoding.UTF8.GetBytes(registerModel.Login + registerModel.Password)));
+
+        encoder.Encode(Encoding.UTF8.GetBytes(registerModel.Login));
+        Console.WriteLine("MMMMMMMM");
     }
 public class RegisterModel
 {
@@ -157,9 +164,6 @@ public class RegisterModel
 
 
     Card card;
-    private async Task OnClickAuth()
-    {
-        //some functional
-    }
+
 
 }
