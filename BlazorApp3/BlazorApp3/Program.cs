@@ -10,9 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddControllers();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -27,6 +29,7 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = false
     };
 });
+
 //builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 //builder.Services.AddAuthentication(Jwt  ).AddJwtBearer()
 
@@ -46,15 +49,19 @@ else
     app.UseHsts();
 }
 
+
 app.MapControllers();
 
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+app.UseAuthentication();
 
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(BlazorApp3.Client._Imports).Assembly);
+app.MapControllers();
+
 app.UseAuthorization();
 app.Run();
