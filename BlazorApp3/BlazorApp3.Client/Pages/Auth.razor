@@ -103,12 +103,12 @@
         Modules.Encoder encoder = new Modules.Encoder(JS, SHA256.HashData(Encoding.UTF8.GetBytes(authModel.Login + authModel.Password)));
         byte[] buffer = Encoding.UTF8.GetBytes(authModel.Login);
         await encoder.Encode(buffer);
-        var content = new StringContent(JsonActions.SerializeToString("login", [buffer]));
         var responce = await httpClient.PostAsync(httpClient.BaseAddress + "/api/Login", new StringContent(Base64UrlTextEncoder.Encode(buffer)));
         if (responce.StatusCode == System.Net.HttpStatusCode.OK)
         {
             await responce.Content.ReadAsStreamAsync().Result.ReadAsync(buffer);
             User.Jwt = Encoding.UTF8.GetString(buffer);
+            await JS.InvokeVoidAsync("localStorage.setItem", "user", $"{Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(authModel.Login + authModel.Password)))};{Encoding.UTF8.GetString(buffer)}").ConfigureAwait(false);
             CreateToastMessage(ToastType.Success);
         }
         else

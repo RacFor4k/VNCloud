@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using BlazorApp3.Models;
 namespace BlazorApp3.Controllers
 {
-    [Route("api/[controller]")]
+	[Route("api/[controller]")]
 	[ApiController]
 	public class DataBaseController : ControllerBase
 	{
@@ -39,9 +39,9 @@ namespace BlazorApp3.Controllers
 		[HttpPut("CreateAccount")]
 		public async Task<IActionResult> CreateAccount()
 		{
-            JsonObject json;
-            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
-            byte[] login = json["login"].GetValue<byte[]>();
+			JsonObject json;
+			json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+			byte[] login = json["login"].GetValue<byte[]>();
 			string email = json["email"].GetValue<string>();
 			string code = json["code"].GetValue<string>();
 			if(!await AuthCode.IsExsist(code, login))
@@ -69,19 +69,19 @@ namespace BlazorApp3.Controllers
 		[Authorize]
 		public async Task<IActionResult> GetData()
 		{
-            JsonObject json;
-            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
-            string path = json["path"].GetValue<string>();
-            byte[] login = json["login"].GetValue<byte[]>();
-            List<RoutesModel> filesystem;
-            try
-            {
-                filesystem = await SQLquery.SearchData(SQLquery.SearchData(login).Result[0].Id);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status406NotAcceptable);
-            }
+			JsonObject json;
+			json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+			string path = json["path"].GetValue<string>();
+			byte[] login = json["login"].GetValue<byte[]>();
+			List<RoutesModel> filesystem;
+			try
+			{
+				filesystem = await SQLquery.SearchData(SQLquery.SearchData(login).Result[0].Id);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(StatusCodes.Status406NotAcceptable);
+			}
 			var files = filesystem.FindAll(x => StringHelper.FirstContains(path, x.Route));
 			string parse = "";
 			foreach(var file in files)
@@ -89,7 +89,7 @@ namespace BlazorApp3.Controllers
 				parse += file.Route + "?" + Convert.ToString(file.IsFolder)+'\n';
 			}
 			return Ok(parse);
-        }
+		}
 
 
 		//я не знаю зачем это
