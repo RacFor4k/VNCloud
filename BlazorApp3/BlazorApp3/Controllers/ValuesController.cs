@@ -1,10 +1,13 @@
 ﻿using BlazorApp3.Modules;
+using BlazorApp3.Client.Modules;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Nodes;
+using BlazorApp3.Models;
 
 namespace BlazorApp3.Controllers
 {
@@ -15,14 +18,13 @@ namespace BlazorApp3.Controllers
         private byte[] key = SHA256.HashData(Encoding.UTF8.GetBytes("123"));
         string host = "localhost:";
 
-        [HttpPost("sendMail/{mail}/{login}")]
-        public async Task<IActionResult> SendMail(string mail, string login)
+        [HttpPost("sendMail")]
+        public async Task<IActionResult> SendMail()
         {
-            System.Security.Cryptography.Aes aes = System.Security.Cryptography.Aes.Create(); 
-            aes.Mode = CipherMode.CBC;
-            aes.Key = key;
-            aes.GenerateIV();
-            string link = host + "/api/Link/" + EncryptionHelper.EncryptString(login, key);
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+            string code = await AuthCode.GenerateCode(DateTime.Now.Nanosecond);
+            string mail = json["mail"].ToString();
             string body;
             using (FileStream fs = new FileStream("GmailAPI/GmailAttachment/gmailReqest.html", FileMode.Open))
             {
@@ -33,7 +35,7 @@ namespace BlazorApp3.Controllers
 
             var byteArray = "verification link VNCloud";
             body = body.Replace("EmailInsert", mail);
-            body = body.Replace("KeyInsert", link);
+            body = body.Replace("KeyInsert", code);
 
 
             GmailMessage message = new GmailMessage(byteArray,new List<string> { mail },body);
