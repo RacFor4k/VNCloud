@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Org.BouncyCastle.Tls;
+using System.Text.Json.Nodes;
 
 namespace BlazorApp3.Controllers
 {
@@ -13,23 +15,43 @@ namespace BlazorApp3.Controllers
     public class CloudController : ControllerBase
     {
         private const string host = "C:/Prifiles";
-        [HttpPost("UploadFile/{Path}/{Login}/{Token}")]
+
+        [HttpGet("DownloadFile")]
         [Authorize]
-        public async Task<IActionResult> UploadFile(string Path, string Login, string Token)
+        public async Task<IActionResult> DownloadFile()
         {
-            string path;
-            byte[] login;
-            byte[] token;
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+            string path = json["path"].GetValue<string>();
+            byte[] login = json["login"].GetValue<byte[]>();
+            List<RoutesModel> filesystem;
             try
             {
-                path = Base64Url.Decode(Path);
-                login = Base64UrlTextEncoder.Decode(Login);
-                //token = Base64UrlTextEncoder.Decode(Token);
-                token = new byte[32];
-            }catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status400BadRequest);
+                filesystem = await SQLquery.SearchData(SQLquery.SearchData(login).Result[0].Id);
             }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status406NotAcceptable);
+            }
+            var file = filesystem.Find(x => x.IsFolder == false && x.Route == path);
+            if (file == null)
+            {
+                return NotFound("соси бибу");
+            }
+            using(FileStream fs = new FileStream(host + file.Route, FileMode.Open, FileAccess.Read))
+            {
+                return File(fs, "application/octet-stream", fs.Name);
+            }
+        }
+
+        [HttpPost("UploadFile")]
+        [Authorize]
+        public async Task<IActionResult> UploadFile()
+        {
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+            string path = json["path"].GetValue<string>();
+            byte[] login = json["login"].GetValue<byte[]>();
             List<RoutesModel> filesystem;
             try
             {
@@ -49,8 +71,8 @@ namespace BlazorApp3.Controllers
                 temp_path += '(' + Convert.ToString(temp_i) + ").";
                 temp_path += extension;
             }
-            temp_path = host+Login+temp_path;
-            Directory.CreateDirectory(Path);
+            temp_path = host+Base64UrlTextEncoder.Encode(login)+temp_path;
+            Directory.CreateDirectory(path);
             Directory.CreateDirectory(temp_path.Substring(0, temp_path.LastIndexOf('/')));
             int offset = 0;
             using(FileStream fs = new FileStream(temp_path, FileMode.CreateNew))
@@ -63,24 +85,14 @@ namespace BlazorApp3.Controllers
             return StatusCode(200);
         }
 
-        [HttpPost("CreateFolder/{Path}/{Login}/{Token}")]
+        [HttpPost("CreateFolder")]
         [Authorize]
-        public async Task<IActionResult> CreateFolder(string Path, string Login, string Token)
+        public async Task<IActionResult> CreateFolder()
         {
-            string path;
-            byte[] login;
-            byte[] token;
-            try
-            {
-                path = Base64Url.Decode(Path);
-                login = Base64UrlTextEncoder.Decode(Login);
-                //token = Base64UrlTextEncoder.Decode(Token);
-                token = new byte[32];
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status400BadRequest);
-            }
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+            string path = json["path"].GetValue<string>();
+            byte[] login = json["login"].GetValue<byte[]>();
             List<RoutesModel> filesystem;
             try
             {
@@ -92,7 +104,7 @@ namespace BlazorApp3.Controllers
             }
             if (filesystem.FindIndex(x => x.Route == path && x.IsFolder == true) != -1)
                 return Conflict("409.1;The folder already exist");
-            if (await SQLquery.CreateData(SQLquery.SearchData(login).Result[0].Id, host + Login + path, true) == null)
+            if (await SQLquery.CreateData(SQLquery.SearchData(login).Result[0].Id, host + Base64UrlTextEncoder.Encode(login) + path, true) == null)
             {
                 return Conflict("409.2;Connot create a new folder");
             }

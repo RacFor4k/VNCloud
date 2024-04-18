@@ -9,6 +9,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using BlazorApp3.Models;
+using BlazorApp3.Modules.Common;
 namespace BlazorApp3.Controllers
 {
 	[Route("api/[controller]")]
@@ -34,7 +37,6 @@ namespace BlazorApp3.Controllers
 			return Encoding.UTF8.GetBytes(jsth.WriteToken(token));
 		}
 
-
 		[HttpPut("CreateAccount")]
 		public async Task<IActionResult> CreateAccount()
 		{
@@ -57,7 +59,34 @@ namespace BlazorApp3.Controllers
 			return StatusCode(404);
 		}
 
+		[HttpGet("GetData")]
+		[Authorize]
+		public async Task<IActionResult> GetData()
+		{
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+            string path = json["path"].GetValue<string>();
+            byte[] login = json["login"].GetValue<byte[]>();
+            List<RoutesModel> filesystem;
+            try
+            {
+                filesystem = await SQLquery.SearchData(SQLquery.SearchData(login).Result[0].Id);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status406NotAcceptable);
+            }
+			var files = filesystem.FindAll(x => StringHelper.FirstContains(path, x.Route));
+			string parse = "";
+			foreach(var file in files)
+			{
+				parse += file.Route + "?" + Convert.ToString(file.IsFolder)+'\n';
+			}
+			return Ok(parse);
+        }
+
 		[HttpPut("CreateData/{ParentID}/{Url}")]
+		[Authorize]
 		public async Task<IActionResult> CreateData(string ParentID, string URL)
 		{
 			int parentID = Convert.ToInt32(Base64UrlTextEncoder.Decode(ParentID));
@@ -67,6 +96,7 @@ namespace BlazorApp3.Controllers
 		}
 
 		[HttpDelete("DeleteData/{ID}/{NameTable})")]
+		[Authorize]
 		public async Task<IActionResult> DeleteData(string ID, string NameTable)
 		{
 			int id = Convert.ToInt32(Base64UrlTextEncoder.Decode(ID));

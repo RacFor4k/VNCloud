@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace BlazorApp3.Client.Modules
 {
-    public static class ClientActions
+    public static class JsonActions
     {
 
         private static byte[] ObjToByte(object obj)
@@ -23,24 +23,21 @@ namespace BlazorApp3.Client.Modules
         public static JsonObject SerializeToJson(string key, object[] values)
         {
             var jsonObj = new JsonObject();
-            foreach (var kvp in kvps)
-            {
-                var jsonArray = new JsonArray();
-                foreach (var obj in kvp.Value)
+            var jsonArray = new JsonArray();
+                foreach (var obj in values)
                 {
                     // Предполагаем, что ObjToByte - это ваш метод для конвертации объекта в байты
                     JsonNode jsonNode = JsonNode.Parse(ObjToByte(obj));
                     jsonArray.Add(jsonNode);
                 }
-                jsonObj.Add(kvp.Key, jsonArray);
-            }
+                jsonObj.Add(key, jsonArray);
             return jsonObj;
         }
 
         // Функция для сериализации в строку
-        public static string SerializeToString(KeyValuePair<string, object[]>[] kvps)
+        public static string SerializeToString(string key, object[] values)
         {
-            var jsonObj = SerializeToJson(kvps);
+            var jsonObj = SerializeToJson(key, values);
             return jsonObj.ToJsonString();
         }
     }

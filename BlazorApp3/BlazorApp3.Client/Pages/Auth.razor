@@ -103,7 +103,7 @@
         Modules.Encoder encoder = new Modules.Encoder(JS, SHA256.HashData(Encoding.UTF8.GetBytes(authModel.Login + authModel.Password)));
         byte[] buffer = Encoding.UTF8.GetBytes(authModel.Login);
         await encoder.Encode(buffer);
-        var content = new StringContent(ClientActions.SerializeToString())
+        var content = new StringContent(JsonActions.SerializeToString("login", [buffer]));
         var responce = await httpClient.PostAsync(httpClient.BaseAddress + "/api/Login", new StringContent(Base64UrlTextEncoder.Encode(buffer)));
         if (responce.StatusCode == System.Net.HttpStatusCode.OK)
         {
