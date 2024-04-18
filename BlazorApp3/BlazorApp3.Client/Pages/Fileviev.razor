@@ -2,6 +2,8 @@
 @rendermode InteractiveWebAssembly
 @inject IJSRuntime JSRuntime
 
+@using BlazorApp3.Client.Modules
+@using Microsoft.AspNetCore.WebUtilities
 @using System.IO
 @using Microsoft.AspNetCore.Components.Forms
 
@@ -17,7 +19,7 @@
 
 <Toasts class="p-3" Messages="messages" Placement="ToastsPlacement.BottomLeft" />
 <div >
-    <a class="d-inline h-5" style="text-decoration:none;"> Cloud </a>
+    
     @foreach (var route in routes.Split('/'))
     {
         
@@ -64,8 +66,8 @@
         new FileInfo("dfdf/sdd.ffr"),new FileInfo("dfdf/sdddg"), new FileInfo("dfdf/sdd.exe")
     };
     private Modal modal = default!;
-    private string routes = "";
-
+    private string routes = "Cloud/";
+    string host = Base64UrlTextEncoder.Encode(User.Login);
     private FileInfo currentFile;
     private string newFileName;
 
