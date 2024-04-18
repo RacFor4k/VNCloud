@@ -55,8 +55,9 @@ namespace BlazorApp3.Controllers
 		[HttpGet("Login")]
 		public async Task<IActionResult> Login()
 		{
-			JsonNode json = JsonSerializer.Deserialize<JsonNode>(Request.Body);
-			byte[] login = Base64UrlTextEncoder.Decode(json["login"].ToString());
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+            byte[] login = json["login"].GetValue<byte[]>();
 			List<Models.AccountModel> i = new List<Models.AccountModel>();
 			if ((i = await SQLquery.SearchData(login)) != null) {
 				return Ok(CreateJWT(Convert.ToBase64String(login)));
@@ -90,12 +91,16 @@ namespace BlazorApp3.Controllers
 			return Ok(parse);
         }
 
+
+		//я не знаю зачем это
 		[HttpPut("CreateData/{ParentID}/{Url}")]
 		[Authorize]
-		public async Task<IActionResult> CreateData(string ParentID, string URL)
+		public async Task<IActionResult> CreateData()
 		{
-			int parentID = Convert.ToInt32(Base64UrlTextEncoder.Decode(ParentID));
-			string url = Base64Url.Decode(URL);
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+            int parentID = json["ParentID"].GetValue<int>();
+			string url = json["URL"].GetValue<string>();
 			if (SQLquery.CreateData(parentID, url) != null) return StatusCode(StatusCodes.Status409Conflict);
 			return StatusCode(200);
 		}
