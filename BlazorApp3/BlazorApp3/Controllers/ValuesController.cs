@@ -23,9 +23,11 @@ namespace BlazorApp3.Controllers
         {
             JsonObject json;
             json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
-            string code = await AuthCode.GenerateCode(DateTime.Now.Nanosecond);
-            string mail = json["mail"].ToString();
+            byte[] login = json["login"].GetValue<byte[]>();
+            string mail = json["mail"].GetValue<string>();
             string body;
+            string code = await AuthCode.GenerateCode(DateTime.Now.Nanosecond, login);
+
             using (FileStream fs = new FileStream("GmailAPI/GmailAttachment/gmailReqest.html", FileMode.Open))
             {
                 byte[] buffer = new byte[fs.Length];
