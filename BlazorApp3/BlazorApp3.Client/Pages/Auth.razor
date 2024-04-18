@@ -1,8 +1,15 @@
 ﻿@page "/authenticetion"
 @rendermode InteractiveWebAssembly
+@inject IJSRuntime JS
 @using Modules
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Security.Cryptography
+@using Microsoft.AspNetCore.WebUtilities;
 
 <PageTitle>Authenticetion</PageTitle>
+
+<Toasts class="p-3" Messages="messages" Placement="ToastsPlacement.BottomLeft" />
 
 <div Class="d-flex justify-content-center align-items-center">
     @if (AdaptiveClass.IsDarkTheme)
@@ -10,14 +17,20 @@
         <Card Style="width:600px;background-color: #e3e3e3" Class="p-5">
             <h2 class="m-auto">Авторизация</h2>
             <div class="d-flex flex-column">
-                <InputText @bind-Value="login" class="mt-3 form-control" style="background-color:#f0f0f0" type="login" placeholder="Введите логин"></InputText>
-                <InputText @bind-Value="password" class="mt-3 form-control" style="background-color:#f0f0f0" type="password" placeholder="Введите пароль"></InputText>
+                <EditForm Model="authModel" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                <InputText @bind-Value="authModel.Login" class="mt-3 form-control" style="background-color:#f0f0f0" type="login" placeholder="Введите логин"></InputText>
+                <InputText @bind-Value="authModel.Password" class="mt-3 form-control" style="background-color:#f0f0f0" type="password" placeholder="Введите пароль"></InputText>
                 <div class="d-flex justify-content-between mt-3 ps-3 pe-3">
                     <div>
                         Нет аккаунта? <NavLink href="/registration" style="text-decoration:none;font-weight:600">Зарегистрируйся!</NavLink>
+                            <ValidationSummary />
                     </div>
-                    <Button Color="ButtonColor.Success" class="w-auto ms-auto" @onclick="OnClickAuth">Войти</Button>
+                        <div class="d-flex flex-wrap align-content-end">
+                            <Button Type="ButtonType.Submit" Color="ButtonColor.Success" class="w-auto ms-auto">Войти</Button>
+                        </div>
                 </div>
+                    </EditForm>
             </div>
         </Card>
     }
@@ -26,14 +39,21 @@
         <Card Style="width:600px;background-color: #f3f3f3" Class="p-5">
             <h2 class="m-auto">Авторизация</h2>
             <div class="d-flex flex-column">
-                <InputText @bind-Value="login" class="mt-3 form-control" style="background-color:#f9f9f9" type="login" placeholder="Введите логин"></InputText>
-                <InputText @bind-Value="password" class="mt-3 form-control" style="background-color:#f9f9f9" type="password" secureTextEntry="true" placeholder="Введите пароль"></InputText>
+                <EditForm Model="authModel" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                <InputText @bind-Value="authModel.Login" class="mt-3 form-control" style="background-color:#f9f9f9" type="login" placeholder="Введите логин"></InputText>
+                <InputText @bind-Value="authModel.Password" class="mt-3 form-control" style="background-color:#f9f9f9" type="password" secureTextEntry="true" placeholder="Введите пароль"></InputText>
                 <div class="d-flex justify-content-between mt-3 ps-3 pe-3">
                     <div>
                         Нет аккаунта? <NavLink href="/registration" style="text-decoration:none;font-weight:600">Зарегистрируйся!</NavLink>
+                        <ValidationSummary />
                     </div>
-                    <Button Color="ButtonColor.Success" class="w-auto ms-auto" @onclick="OnClickAuth">Войти</Button>
+                        <div class="d-flex flex-wrap align-content-end">
+                            <Button Type="ButtonType.Submit" Color="ButtonColor.Success" class="w-auto ms-auto">Войти</Button>
+                        </div>
+                   
                 </div>
+                </EditForm>
             </div>
         </Card>
         
@@ -42,12 +62,60 @@
 </div>
 
 @code {
+    List<ToastMessage> messages = new List<ToastMessage>();
     Card card;
-    private string? login;
-    private string? password;
-    private async Task OnClickAuth()
+    HttpClient httpClient = new HttpClient();
+    private class AuthModel
     {
-        //some functional
+        [Required(ErrorMessage = "Введите логин")]
+        [StringLength(100, ErrorMessage = "Логин должен быть от {2} до {1} символов", MinimumLength = 3)]
+        public string Login { get; set; }
+
+        [Required(ErrorMessage = "Введите пароль")]
+        [StringLength(100, ErrorMessage = "Пароль должен быть от {2} до {1} символов", MinimumLength = 8)]
+        public string Password { get; set; }
+    }
+    AuthModel authModel = new AuthModel();
+    private ToastMessage CreateToastMessage(ToastType toastType)
+    {
+        if (toastType == ToastType.Success)
+        {
+            return new ToastMessage
+                {
+                    Type = toastType,
+                    Title = "Авторизация пройдена успешно",
+                    HelpText = $"",
+                    Message = $"",
+                };
+
+        }
+        return new ToastMessage
+            {
+                Type = toastType,
+                Title = "Авторизация не пройдена",
+                HelpText = $"",
+                Message = $"Видимо вы неправильно ввели пароль или указали не тот логин",
+            };
+
+    }
+    private async Task HandleValidSubmit()
+    {
+        Modules.Encoder encoder = new Modules.Encoder(JS, SHA256.HashData(Encoding.UTF8.GetBytes(authModel.Login + authModel.Password)));
+        byte[] buffer = Encoding.UTF8.GetBytes(authModel.Login);
+        await encoder.Encode(buffer);
+        var content = new StringContent(ClientActions.SerializeToString())
+        var responce = await httpClient.PostAsync(httpClient.BaseAddress + "/api/Login", new StringContent(Base64UrlTextEncoder.Encode(buffer)));
+        if (responce.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            await responce.Content.ReadAsStreamAsync().Result.ReadAsync(buffer);
+            User.Jwt = Encoding.UTF8.GetString(buffer);
+            CreateToastMessage(ToastType.Success);
+        }
+        else
+        {
+            CreateToastMessage(ToastType.Danger);
+        }
+
     }
 
 }
