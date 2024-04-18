@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Org.BouncyCastle.Tls;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.Json.Nodes;
 
 namespace BlazorApp3.Controllers
@@ -42,6 +43,8 @@ namespace BlazorApp3.Controllers
             {
                 return File(fs, "application/octet-stream", fs.Name);
             }
+            return Problem("хаха, ты лох🤡");
+            
         }
 
         [HttpPost("UploadFile")]
