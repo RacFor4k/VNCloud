@@ -11,10 +11,9 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using BlazorApp3.Models;
-using BlazorApp3.Modules.Common;
 namespace BlazorApp3.Controllers
 {
-	[Route("api/[controller]")]
+    [Route("api/[controller]")]
 	[ApiController]
 	public class DataBaseController : ControllerBase
 	{
@@ -40,9 +39,15 @@ namespace BlazorApp3.Controllers
 		[HttpPut("CreateAccount")]
 		public async Task<IActionResult> CreateAccount()
 		{
-			JsonNode json = JsonSerializer.Deserialize<JsonNode>(Request.Body);
-			byte[] login = Base64UrlTextEncoder.Decode(json["login"].ToString());
-			string email = Base64Url.Decode(json["Email"].ToString());
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+            byte[] login = json["login"].GetValue<byte[]>();
+			string email = json["email"].GetValue<string>();
+			string code = json["code"].GetValue<string>();
+			if(!await AuthCode.IsExsist(code, login))
+			{
+				return StatusCode(StatusCodes.Status406NotAcceptable);
+			}
 			if(SQLquery.CreateData(login, email)!=null) return StatusCode(StatusCodes.Status409Conflict);
 			return StatusCode(200);
 		}
