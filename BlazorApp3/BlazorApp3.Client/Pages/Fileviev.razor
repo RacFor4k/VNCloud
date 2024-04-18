@@ -1,6 +1,8 @@
 ﻿@page "/cloud"
 @rendermode InteractiveWebAssembly
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
+
 
 @using BlazorApp3.Client.Modules
 @using Microsoft.AspNetCore.WebUtilities
@@ -69,7 +71,7 @@
 
     private Modal modal = default!;
     private string routes = "Cloud/";
-    static string host = Base64UrlTextEncoder.Encode(User.Login);
+    static string host;
     private FileInfo currentFile;
     private string newFileName;
     string userdata;
@@ -87,8 +89,17 @@
     }
     protected override async Task OnInitializedAsync()
     {
+        
         await GoToFolder(new FileInfo(host, true, JS, Convert.FromBase64String(userdata.Split(';')[1])));
         await base.OnInitializedAsync();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!string.IsNullOrWhiteSpace(await JS.InvokeAsync<string>("localStorage.getItem", "user").ConfigureAwait(false)))
+        {
+            Navigation.NavigateTo("/");
+        }
+        await base.OnAfterRenderAsync(true);
     }
 
     private async Task EditFile(FileInfo file)
@@ -227,7 +238,7 @@
         public string Road { get; set; }
         // Другие свойства файла
         public FileInfo(string road, IJSRuntime? JS, byte[] code){
-            Road = road.Split(host)[1];
+            Road = road.Split(host)[0];
             int ls = road.LastIndexOf('/');
             BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
             Name =  road.Substring(++ls, road.Length-ls);
@@ -239,9 +250,9 @@
 
         }
 
-        public  FileInfo(string road, bool isFolder, IJSRuntime JS, byte[] code)
+        public FileInfo(string road, bool isFolder, IJSRuntime JS, byte[] code)
         {
-            Road = road.Split(host)[1];
+            Road = road.Split(host)[0];
             int ls = road.LastIndexOf('/');
             BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
             byte[] buffer = Convert.FromBase64String(road.Substring(++ls, road.Length - ls));
