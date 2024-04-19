@@ -64,18 +64,18 @@ namespace BlazorApp3.Client.Modules
 
         private byte[] _encoderKey;
 
-        public async Task Encode(byte[] buffer)
+        public async Task<byte[]> Encode(byte[] buffer)
         {
             string str = Encoding.ASCII.GetString(buffer);
             string encoderKey = Encoding.ASCII.GetString(_encoderKey);
-            await _runtime.InvokeAsync<byte[]>("encryptAES", [str, encoderKey]);
+            return await _runtime.InvokeAsync<byte[]>("encryptAES", [str, encoderKey]);
         }
 
-        public async Task Decode(byte[] buffer)
+        public async Task<byte[]> Decode(byte[] buffer)
         {
             string str = Encoding.ASCII.GetString(buffer);
             string encoderKey = Encoding.ASCII.GetString(_encoderKey);
-            await _runtime.InvokeAsync<byte[]>("dencryptAES", [str, encoderKey]);
+            return await _runtime.InvokeAsync<byte[]>("dencryptAES", [str, encoderKey]);
         }
     }
 }

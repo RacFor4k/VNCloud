@@ -56,8 +56,8 @@ namespace BlazorApp3.Models
             for(int i = 0;i<6;i++)
             {
                 if (rand.Next(0, 1) == 0)
-                    result += rand.Next('A', 'Z');
-                else result += rand.Next('0', '9');
+                    result += (char)rand.Next('A', 'Z');
+                else result += (char)rand.Next('0', '9');
             }
             Code code = new Code()
             {

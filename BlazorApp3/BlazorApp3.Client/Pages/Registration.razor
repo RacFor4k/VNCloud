@@ -127,7 +127,7 @@
         jsobj.Add("login", JsonNode.Parse(buffer));
         jsobj.Add("email", registerModel.Email);
         jsobj.Add("code", keyModel.Vkey);
-        var status = await httpClient.PostAsync(httpClient.BaseAddress + "/api/CreateAccount", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
+        var status = await httpClient.PostAsync(httpClient.BaseAddress + "/api/DataBase/CreateAccount", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
         if (!status.IsSuccessStatusCode)
         {
             ShowMessage(ToastType.Danger);
@@ -156,13 +156,15 @@
     {
         Modules.Encoder encoder = new Modules.Encoder(JS, SHA256.HashData(Encoding.UTF8.GetBytes(registerModel.Login + registerModel.Password)));
         byte[] buffer = Encoding.UTF8.GetBytes(registerModel.Login);
-        await encoder.Encode(buffer);
+        buffer = await encoder.Encode(buffer);
         JsonObject jsobj = new JsonObject();
 
 
-        jsobj.Add("login", JsonNode.Parse(buffer));
+        jsobj.Add("login", Encoding.ASCII.GetString(buffer));
         jsobj.Add("email", registerModel.Email);
-        await httpClient.PostAsync(httpClient.BaseAddress + "/api/SendMail", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
+        Console.WriteLine(httpClient.BaseAddress + "api/SendMail");
+        await httpClient.PostAsync(httpClient.BaseAddress + "api/Gmail/SendMail", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
+        OnShowModalClick();
         Console.WriteLine("MMMMMMMM");
     }
 public class RegisterModel

@@ -22,9 +22,9 @@ namespace BlazorApp3.Controllers
         public async Task<IActionResult> SendMail()
         {
             JsonObject json;
-            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
-            byte[] login = json["login"].GetValue<byte[]>();
-            string mail = json["mail"].GetValue<string>();
+            json = JsonNode.ParseAsync(Request.Body).Result.AsObject();
+            byte[] login = Encoding.ASCII.GetBytes( json["login"].GetValue<string>());
+            string mail = json["email"].GetValue<string>();
             string body;
             string code = await AuthCode.GenerateCode(DateTime.Now.Nanosecond, login);
 
