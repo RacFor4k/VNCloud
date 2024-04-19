@@ -37,12 +37,12 @@ namespace BlazorApp3.Controllers
 			return Encoding.UTF8.GetBytes(jsth.WriteToken(token));
 		}
 
-		[HttpPut("CreateAccount")]
+		[HttpPost("CreateAccount")]
 		public async Task<IActionResult> CreateAccount()
 		{
 			JsonObject json;
-			json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
-			byte[] login = json["login"].GetValue<byte[]>();
+			json = JsonNode.ParseAsync(Request.Body).Result.AsObject();
+			byte[] login = Encoding.ASCII.GetBytes(json["login"].GetValue<string>());
 			string email = json["email"].GetValue<string>();
 			string code = json["code"].GetValue<string>();
 			if(!await AuthCode.IsExsist(code, login))
@@ -53,12 +53,12 @@ namespace BlazorApp3.Controllers
 			return StatusCode(200);
 		}
 
-		[HttpGet("Login")]
+		[HttpPost("Login")]
 		public async Task<IActionResult> Login()
 		{
-            JsonObject json;
-            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
-            byte[] login = json["login"].GetValue<byte[]>();
+			JsonObject json;
+			json = JsonNode.ParseAsync(Request.Body).Result.AsObject();
+			byte[] login = Encoding.ASCII.GetBytes(json["login"].GetValue<string>());
 			List<Models.AccountModel> i = new List<Models.AccountModel>();
 			if ((i = await SQLquery.SearchData(login)) != null) {
 				return Ok(CreateJWT(Convert.ToBase64String(login)));
@@ -98,9 +98,9 @@ namespace BlazorApp3.Controllers
 		[Authorize]
 		public async Task<IActionResult> CreateData()
 		{
-            JsonObject json;
-            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
-            int parentID = json["ParentID"].GetValue<int>();
+			JsonObject json;
+			json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+			int parentID = json["ParentID"].GetValue<int>();
 			string url = json["URL"].GetValue<string>();
 			if (SQLquery.CreateData(parentID, url) != null) return StatusCode(StatusCodes.Status409Conflict);
 			return StatusCode(200);
@@ -110,8 +110,8 @@ namespace BlazorApp3.Controllers
 		[Authorize]
 		public async Task<IActionResult> DeleteData()
 		{
-            JsonObject json;
-            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+			JsonObject json;
+			json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
 			int id = json["id"].GetValue<int>();// Convert.ToInt32(Base64UrlTextEncoder.Decode(ID));
 			string nameTable = json["NameTable"].GetValue<string>();//Base64Url.Decode(NameTable);
 			if (SQLquery.DeleteData(id, nameTable) != null) return StatusCode(StatusCodes.Status409Conflict);

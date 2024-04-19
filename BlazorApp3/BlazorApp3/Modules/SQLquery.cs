@@ -73,6 +73,7 @@ namespace BlazorApp3.Modules
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 return ex.Message;
             }
         }

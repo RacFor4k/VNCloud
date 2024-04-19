@@ -6,6 +6,7 @@
 @using System.Text
 @using System.Security.Cryptography
 @using Microsoft.AspNetCore.WebUtilities;
+@using System.Text.Json.Nodes
 
 <PageTitle>Authenticetion</PageTitle>
 
@@ -64,7 +65,7 @@
 @code {
     List<ToastMessage> messages = new List<ToastMessage>();
     Card card;
-    HttpClient httpClient = new HttpClient();
+    HttpClient httpClient = User.HttpClient;
     private class AuthModel
     {
         [Required(ErrorMessage = "Введите логин")]
@@ -102,9 +103,12 @@
     {
         Modules.Encoder encoder = new Modules.Encoder(JS, SHA256.HashData(Encoding.UTF8.GetBytes(authModel.Login + authModel.Password)));
         byte[] buffer = Encoding.UTF8.GetBytes(authModel.Login);
-        await encoder.Encode(buffer);
+        buffer = await encoder.Encode(buffer);
         var log = buffer;
-        var responce = await httpClient.PostAsync(httpClient.BaseAddress + "/api/Login", new StringContent(Base64UrlTextEncoder.Encode(buffer)));
+        JsonObject jsobj = new JsonObject();
+        jsobj.Add("login", Encoding.ASCII.GetString(buffer));
+        Console.WriteLine(httpClient.BaseAddress + "api/DataBase/Login");
+        var responce = await httpClient.PostAsync(httpClient.BaseAddress + "api/DataBase/Login", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
         if (responce.StatusCode == System.Net.HttpStatusCode.OK)
         {
             await responce.Content.ReadAsStreamAsync().Result.ReadAsync(buffer);

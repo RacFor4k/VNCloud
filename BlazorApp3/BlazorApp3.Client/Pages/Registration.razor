@@ -77,13 +77,10 @@
         <EditForm Model="@keyModel" OnValidSubmit="@HandleValidKey">
             <DataAnnotationsValidator />
             <InputText @bind-Value="keyModel.Vkey" class="mt-3 form-control" type="key" placeholder="Введите код..."/>
-            <ValidationSummary />    
+            <ValidationSummary />
+            <Button Type="ButtonType.Submit" Color="ButtonColor.Primary">Проверить</Button>
         </EditForm>
     </BodyTemplate>
-    <FooterTemplate>
-
-        <Button Type="ButtonType.Submit" Color="ButtonColor.Primary">Проверить</Button>
-    </FooterTemplate>
 </Modal>
 
 @code {
@@ -122,17 +119,21 @@
     {
         Modules.Encoder encoder = new Modules.Encoder(JS, SHA256.HashData(Encoding.UTF8.GetBytes(registerModel.Login + registerModel.Password)));
         byte[] buffer = Encoding.UTF8.GetBytes(registerModel.Login);
-        await encoder.Encode(buffer);
+        buffer = await encoder.Encode(buffer);
         JsonObject jsobj = new JsonObject();
-        jsobj.Add("login", JsonNode.Parse(buffer));
+        jsobj.Add("login", Encoding.ASCII.GetString(buffer));
         jsobj.Add("email", registerModel.Email);
         jsobj.Add("code", keyModel.Vkey);
-        var status = await httpClient.PostAsync(httpClient.BaseAddress + "/api/DataBase/CreateAccount", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
+        var status = await httpClient.PostAsync(httpClient.BaseAddress + "api/DataBase/CreateAccount", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
         if (!status.IsSuccessStatusCode)
         {
             ShowMessage(ToastType.Danger);
         }
-        ShowMessage(ToastType.Success);
+        else
+        {
+            ShowMessage(ToastType.Success);
+        }
+        await modal.HideAsync();
     }
     public class KeyModel
     {
