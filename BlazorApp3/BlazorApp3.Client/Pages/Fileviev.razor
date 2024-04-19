@@ -29,7 +29,7 @@
     @foreach (var route in routes.Split('/'))
     {
         
-        <a class="d-inline h-5" style="text-decoration:none;" onclick="@GoToFolder(new FileInfo(routes.Substring(0,routes.Split(route)[0].Length + route.Length - 1),true,JS, Convert.FromBase64String(userdata.Split(';')[1])))"> @route </a>
+        <a class="d-inline h-5" style="text-decoration:none;" onclick="@GoToFolder(new FileInfo(routes.Substring(0,routes.Split(route)[0].Length + route.Length - 2),true,JS, Convert.FromBase64String(userdata.Split(';')[1])))"> @route </a>
         <p class="d-inline h-5" style="text-decoration:none;"> > </p>
     }
     
@@ -74,11 +74,12 @@
     static string host;
     private FileInfo currentFile;
     private string newFileName;
-    string userdata;
+    string userdata = "";
+
 
     private async Task<string> GetJWT()
     {
-        userdata = await JS.InvokeAsync<string>("localStorage.getItem", "user").ConfigureAwait(false);
+        
         if (!string.IsNullOrWhiteSpace(userdata))
         {
             var dataArray = userdata.Split(';', 2);
@@ -89,8 +90,6 @@
     }
     protected override async Task OnInitializedAsync()
     {
-        
-        await GoToFolder(new FileInfo(host, true, JS, Convert.FromBase64String(userdata.Split(';')[1])));
         await base.OnInitializedAsync();
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -99,6 +98,8 @@
         {
             Navigation.NavigateTo("/");
         }
+        userdata = await JS.InvokeAsync<string>("localStorage.getItem", "user").ConfigureAwait(false);
+        await GoToFolder(new FileInfo(host, true, JS, Convert.FromBase64String(userdata.Split(';')[1])));
         await base.OnAfterRenderAsync(true);
     }
 
