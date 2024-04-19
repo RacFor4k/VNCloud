@@ -103,12 +103,13 @@
         Modules.Encoder encoder = new Modules.Encoder(JS, SHA256.HashData(Encoding.UTF8.GetBytes(authModel.Login + authModel.Password)));
         byte[] buffer = Encoding.UTF8.GetBytes(authModel.Login);
         await encoder.Encode(buffer);
+        var log = buffer;
         var responce = await httpClient.PostAsync(httpClient.BaseAddress + "/api/Login", new StringContent(Base64UrlTextEncoder.Encode(buffer)));
         if (responce.StatusCode == System.Net.HttpStatusCode.OK)
         {
             await responce.Content.ReadAsStreamAsync().Result.ReadAsync(buffer);
             User.Jwt = Encoding.UTF8.GetString(buffer);
-            await JS.InvokeVoidAsync("localStorage.setItem", "user", $"{Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(authModel.Login + authModel.Password)))};{Encoding.UTF8.GetString(buffer)}").ConfigureAwait(false);
+            await JS.InvokeVoidAsync("localStorage.setItem", "user", $"{Convert.ToBase64String(log)};{Encoding.UTF8.GetString(buffer)}").ConfigureAwait(false);
             CreateToastMessage(ToastType.Success);
         }
         else
@@ -116,6 +117,13 @@
             CreateToastMessage(ToastType.Danger);
         }
 
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender){
+        await JS.InvokeVoidAsync("import", "./js/encoder.js");
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
 }

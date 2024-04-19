@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Models\AccountModel.cs" />
+    <Content Include="Models\HttpHelper.cs" />
+    <Content Include="Models\RoutesModel.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\DataLibrary\DataLibrary.csproj" />
     <ProjectReference Include="..\BlazorApp3.Client\BlazorApp3.Client.csproj" />
     <PackageReference Include="Google.Apis.Gmail.v1" Version="1.67.0.3287" />

@@ -79,7 +79,7 @@
 
     private async Task<string> GetJWT()
     {
-        
+
         if (!string.IsNullOrWhiteSpace(userdata))
         {
             var dataArray = userdata.Split(';', 2);
@@ -98,9 +98,15 @@
         {
             Navigation.NavigateTo("/");
         }
-        userdata = await JS.InvokeAsync<string>("localStorage.getItem", "user").ConfigureAwait(false);
+        if (firstRender)
+        {
+            
+                await JS.InvokeVoidAsync("import", "./js/encoder.js");
+            
+            userdata = await JS.InvokeAsync<string>("localStorage.getItem", "user").ConfigureAwait(false);
+        }
         await GoToFolder(new FileInfo(host, true, JS, Convert.FromBase64String(userdata.Split(';')[1])));
-        await base.OnAfterRenderAsync(true);
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task EditFile(FileInfo file)
@@ -132,7 +138,7 @@
         JsonObject json = new JsonObject();
         json.Add("path", file.Road);
         routes = file.Road;
-        json.Add("login", JsonNode.Parse(User.Login));
+        json.Add("login", JsonNode.Parse(userdata.Split(';')[0]));
 
         var request = new HttpRequestMessage
             {
@@ -143,15 +149,7 @@
         request.Headers.Add("Authorization", "Bearer " + await GetJWT());
         var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        EncoderStream es = new EncoderStream(JS, Convert.FromBase64String( userdata.Split(';')[2]));
-        response.Content.CopyToAsync(es);
-        MemoryStream ms = new MemoryStream();
-        byte[] buffer = new byte[1];
-        await es.ReadAsync(buffer, 0, (int)es.Length);
-        ms.Write(buffer, 0, buffer.Length);
-
-
-        await JS.InvokeVoidAsync("downloadFileFromStream", file.Name, ms);
+        await JS.InvokeVoidAsync("downloadFileFromStream", file.Name, new EncoderStream(JS, Convert.FromBase64String(userdata.Split(';')[0])).GetDecodeStream());
         var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
     }
 

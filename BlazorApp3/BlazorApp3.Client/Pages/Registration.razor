@@ -7,6 +7,7 @@
 @using System.ComponentModel.DataAnnotations;
 @using System.Text
 @using System.Security.Cryptography
+@using System.Text.Json.Nodes
 
 <PageTitle>Authenticetion</PageTitle>
 
@@ -21,7 +22,7 @@
 
 
             <div class="d-flex flex-column">
-                <EditForm Model="@registerModel" OnValidSubmit="@HandleValidSubmit">
+                <EditForm Model="@registerModel" OnValidSubmit="@HandleValidSubmit" FormName="Registration">
                     <DataAnnotationsValidator />
 
                     <InputText @bind-Value="registerModel.Login" class="mt-3 form-control" style="background-color:#f0f0f0" type="login" placeholder="Введите логин"></InputText>
@@ -34,7 +35,7 @@
                             <ValidationSummary />
                         </div>
                         <div class="d-flex flex-wrap align-content-end">
-                            <Button Type="ButtonType.Submit" Color="ButtonColor.Success" class="w-auto ms-auto">Войти</Button>
+                            <Button Type="ButtonType.Submit" Color="ButtonColor.Success" class="w-auto ms-auto">Зарегистрироваться</Button>
                         </div>
                     </div>
 
@@ -59,7 +60,7 @@
                             <ValidationSummary />
                         </div>
                         <div class="d-flex flex-wrap align-content-end">
-                            <Button Type="ButtonType.Submit" Color="ButtonColor.Success" class="w-auto ms-auto">Войти</Button>
+                            <Button Type="ButtonType.Submit" Color="ButtonColor.Success" class="w-auto ms-auto">Зарегистрироваться</Button>
                         </div>
                     </div>
                 </EditForm>
@@ -81,13 +82,13 @@
     </BodyTemplate>
     <FooterTemplate>
 
-        <Button Color="ButtonColor.Primary" @onclick= "OnHideModalClick">Проверить</Button>
+        <Button Type="ButtonType.Submit" Color="ButtonColor.Primary">Проверить</Button>
     </FooterTemplate>
 </Modal>
 
 @code {
     List<ToastMessage> messages = new List<ToastMessage>();
-
+    HttpClient httpClient = User.HttpClient;
 
     private void ShowMessage(ToastType toastType) => messages.Add(CreateToastMessage(toastType));
 
@@ -119,7 +120,19 @@
 
     private async Task HandleValidKey()
     {
-        // Обработка регистрации
+        Modules.Encoder encoder = new Modules.Encoder(JS, SHA256.HashData(Encoding.UTF8.GetBytes(registerModel.Login + registerModel.Password)));
+        byte[] buffer = Encoding.UTF8.GetBytes(registerModel.Login);
+        await encoder.Encode(buffer);
+        JsonObject jsobj = new JsonObject();
+        jsobj.Add("login", JsonNode.Parse(buffer));
+        jsobj.Add("email", registerModel.Email);
+        jsobj.Add("code", keyModel.Vkey);
+        var status = await httpClient.PostAsync(httpClient.BaseAddress + "/api/CreateAccount", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
+        if (!status.IsSuccessStatusCode)
+        {
+            ShowMessage(ToastType.Danger);
+        }
+        ShowMessage(ToastType.Success);
     }
     public class KeyModel
     {
@@ -142,8 +155,14 @@
     private async Task HandleValidSubmit()
     {
         Modules.Encoder encoder = new Modules.Encoder(JS, SHA256.HashData(Encoding.UTF8.GetBytes(registerModel.Login + registerModel.Password)));
+        byte[] buffer = Encoding.UTF8.GetBytes(registerModel.Login);
+        await encoder.Encode(buffer);
+        JsonObject jsobj = new JsonObject();
 
-        encoder.Encode(Encoding.UTF8.GetBytes(registerModel.Login));
+
+        jsobj.Add("login", JsonNode.Parse(buffer));
+        jsobj.Add("email", registerModel.Email);
+        await httpClient.PostAsync(httpClient.BaseAddress + "/api/SendMail", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
         Console.WriteLine("MMMMMMMM");
     }
 public class RegisterModel
@@ -165,5 +184,12 @@ public class RegisterModel
 
     Card card;
 
-
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("import", "./js/encoder.js");
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
 }

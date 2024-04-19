@@ -1,11 +1,11 @@
-﻿function encryptAES(byteArray, key) {
+﻿window.encryptAES = (byteArray, key) => {
     // Используйте библиотеку CryptoJS для шифрования
     var wordArray = CryptoJS.lib.WordArray.create(byteArray);
     var encrypted = CryptoJS.AES.encrypt(wordArray, key).toString();
     return encrypted;
 }
 
-function decryptAES(encryptedData, key) {
+window.decryptAES = (encryptedData, key) => {
     // Используйте библиотеку CryptoJS для расшифровывания
     var decrypted = CryptoJS.AES.decrypt(encryptedData, key);
     var typedArray = new Uint8Array(decrypted.words.length * 4);
