@@ -94,7 +94,7 @@ namespace BlazorApp3.Controllers
 
 
 		//я не знаю зачем это
-		[HttpPut("CreateData/{ParentID}/{Url}")]
+		[HttpPut("CreateData")]
 		[Authorize]
 		public async Task<IActionResult> CreateData()
 		{

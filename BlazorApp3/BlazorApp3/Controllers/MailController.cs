@@ -18,7 +18,7 @@ namespace BlazorApp3.Controllers
         private byte[] key = SHA256.HashData(Encoding.UTF8.GetBytes("123"));
         string host = "localhost:";
 
-        [HttpPost("sendMail")]
+        [HttpPost("SendMail")]
         public async Task<IActionResult> SendMail()
         {
             JsonObject json;
