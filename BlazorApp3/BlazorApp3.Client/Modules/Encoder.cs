@@ -1,5 +1,6 @@
 ﻿using Microsoft.JSInterop;
 using Microsoft.VisualBasic;
+using System.Text;
 
 
 namespace BlazorApp3.Client.Modules
@@ -65,12 +66,16 @@ namespace BlazorApp3.Client.Modules
 
         public async Task Encode(byte[] buffer)
         {
-            await _runtime.InvokeAsync<byte[]>("encryptAES", [buffer, _encoderKey]);
+            string str = Encoding.ASCII.GetString(buffer);
+            string encoderKey = Encoding.ASCII.GetString(_encoderKey);
+            await _runtime.InvokeAsync<byte[]>("encryptAES", [str, encoderKey]);
         }
 
         public async Task Decode(byte[] buffer)
         {
-            await _runtime.InvokeAsync<byte[]>("dencryptAES", [buffer, _encoderKey]);
+            string str = Encoding.ASCII.GetString(buffer);
+            string encoderKey = Encoding.ASCII.GetString(_encoderKey);
+            await _runtime.InvokeAsync<byte[]>("dencryptAES", [str, encoderKey]);
         }
     }
 }
