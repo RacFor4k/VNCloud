@@ -20,6 +20,11 @@ namespace BlazorApp3.Client.Modules
             _encoder = new Encoder(runtime, encoderKey);
         }
 
+        public MemoryStream GetDecodeStream()
+        {
+            return new MemoryStream(base.ToArray());
+        }
+
         public int Read(byte[] buffer, int offset, int length)
         {
             var i = base.Read(buffer, offset, length);

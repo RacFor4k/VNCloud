@@ -11,6 +11,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using BlazorApp3.Models;
+using Microsoft.EntityFrameworkCore.Storage;
 namespace BlazorApp3.Controllers
 {
 	[Route("api/[controller]")]
@@ -55,8 +56,9 @@ namespace BlazorApp3.Controllers
 		[HttpGet("Login")]
 		public async Task<IActionResult> Login()
 		{
-			JsonNode json = JsonSerializer.Deserialize<JsonNode>(Request.Body);
-			byte[] login = Base64UrlTextEncoder.Decode(json["login"].ToString());
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+            byte[] login = json["login"].GetValue<byte[]>();
 			List<Models.AccountModel> i = new List<Models.AccountModel>();
 			if ((i = await SQLquery.SearchData(login)) != null) {
 				return Ok(CreateJWT(Convert.ToBase64String(login)));
@@ -90,22 +92,28 @@ namespace BlazorApp3.Controllers
 			return Ok(parse);
 		}
 
+
+		//я не знаю зачем это
 		[HttpPut("CreateData/{ParentID}/{Url}")]
 		[Authorize]
-		public async Task<IActionResult> CreateData(string ParentID, string URL)
+		public async Task<IActionResult> CreateData()
 		{
-			int parentID = Convert.ToInt32(Base64UrlTextEncoder.Decode(ParentID));
-			string url = Base64Url.Decode(URL);
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+            int parentID = json["ParentID"].GetValue<int>();
+			string url = json["URL"].GetValue<string>();
 			if (SQLquery.CreateData(parentID, url) != null) return StatusCode(StatusCodes.Status409Conflict);
 			return StatusCode(200);
 		}
 
-		[HttpDelete("DeleteData/{ID}/{NameTable})")]
+		[HttpDelete("DeleteData")]
 		[Authorize]
-		public async Task<IActionResult> DeleteData(string ID, string NameTable)
+		public async Task<IActionResult> DeleteData()
 		{
-			int id = Convert.ToInt32(Base64UrlTextEncoder.Decode(ID));
-			string nameTable = Base64Url.Decode(NameTable);
+            JsonObject json;
+            json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+			int id = json["id"].GetValue<int>();// Convert.ToInt32(Base64UrlTextEncoder.Decode(ID));
+			string nameTable = json["NameTable"].GetValue<string>();//Base64Url.Decode(NameTable);
 			if (SQLquery.DeleteData(id, nameTable) != null) return StatusCode(StatusCodes.Status409Conflict);
 			return StatusCode(200);
 		}
