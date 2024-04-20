@@ -39,7 +39,7 @@ namespace BlazorApp3.Controllers
 
 		[HttpPost("CreateAccount")]
 		public async Task<IActionResult> CreateAccount()
-		{
+			{
 			JsonObject json;
 			json = JsonNode.ParseAsync(Request.Body).Result.AsObject();
 			byte[] login = Encoding.ASCII.GetBytes(json["login"].GetValue<string>());
