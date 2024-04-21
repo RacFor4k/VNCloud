@@ -1,6 +1,7 @@
 ﻿@page "/authenticetion"
 @rendermode InteractiveWebAssembly
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 @using Modules
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -10,9 +11,10 @@
 
 <PageTitle>Authenticetion</PageTitle>
 
-<Toasts class="p-3" Messages="messages" Placement="ToastsPlacement.BottomLeft" />
+
 
 <div Class="d-flex justify-content-center align-items-center">
+    <Toasts class="p-3" Messages="messages" Placement="ToastsPlacement.BottomLeft" />
     @if (AdaptiveClass.IsDarkTheme)
     {
         <Card Style="width:600px;background-color: #e3e3e3" Class="p-5">
@@ -106,19 +108,23 @@
         buffer = await encoder.Encode(buffer);
         var log = buffer;
         JsonObject jsobj = new JsonObject();
-        jsobj.Add("login", Encoding.ASCII.GetString(buffer));
+        jsobj.Add("login", Encoding.UTF8.GetString(buffer));
         Console.WriteLine(httpClient.BaseAddress + "api/DataBase/Login");
         var responce = await httpClient.PostAsync(httpClient.BaseAddress + "api/DataBase/Login", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
         if (responce.StatusCode == System.Net.HttpStatusCode.OK)
         {
+            string jwt;
             await responce.Content.ReadAsStreamAsync().Result.ReadAsync(buffer);
-            User.Jwt = Encoding.UTF8.GetString(buffer);
-            await JS.InvokeVoidAsync("localStorage.setItem", "user", $"{Convert.ToBase64String(log)};{Encoding.UTF8.GetString(buffer)}").ConfigureAwait(false);
-            CreateToastMessage(ToastType.Success);
+            jwt = Encoding.UTF8.GetString(buffer);
+            User.Jwt = jwt;
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "user").ConfigureAwait(false);
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "user", $"{Encoding.UTF8.GetString(log)};{jwt};{Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(authModel.Login + authModel.Password)))}").ConfigureAwait(false);
+            messages.Add(CreateToastMessage(ToastType.Success));
+            Navigation.NavigateTo("/cloud");
         }
         else
         {
-            CreateToastMessage(ToastType.Danger);
+            messages.Add(CreateToastMessage(ToastType.Danger));
         }
 
     }

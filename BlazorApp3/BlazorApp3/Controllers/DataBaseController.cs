@@ -19,7 +19,7 @@ namespace BlazorApp3.Controllers
 	public class DataBaseController : ControllerBase
 	{
 
-		private byte[] CreateJWT(string login)
+		private string CreateJWT(string login)
 		{
 			var secretkey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("2b7d568bbf5dc44935f6af1edb111eb7867a9ecbb14de5609ee4c1f133986d5c")); // NOTE: SAME KEY AS USED IN Program.cs FILE; DO NOT REUSE THIS GUID
 			var credentials = new SigningCredentials(secretkey, SecurityAlgorithms.HmacSha256);
@@ -34,7 +34,7 @@ namespace BlazorApp3.Controllers
 
 			var token = new JwtSecurityToken(issuer: "domain.com", audience: "domain.com", claims: claims, expires: DateTime.Now.AddDays(1), signingCredentials: credentials); // NOTE: ENTER DOMAIN HERE
 			var jsth = new JwtSecurityTokenHandler();
-			return Encoding.UTF8.GetBytes(jsth.WriteToken(token));
+			return jsth.WriteToken(token);
 		}
 
 		[HttpPost("CreateAccount")]
@@ -42,14 +42,14 @@ namespace BlazorApp3.Controllers
 			{
 			JsonObject json;
 			json = JsonNode.ParseAsync(Request.Body).Result.AsObject();
-			byte[] login = Encoding.ASCII.GetBytes(json["login"].GetValue<string>());
+			byte[] login = Encoding.UTF8.GetBytes(json["login"].GetValue<string>());
 			string email = json["email"].GetValue<string>();
 			string code = json["code"].GetValue<string>();
 			if(!await AuthCode.IsExsist(code, login))
 			{
 				return StatusCode(StatusCodes.Status406NotAcceptable);
 			}
-			if(SQLquery.CreateData(login, email)!=null) return StatusCode(StatusCodes.Status409Conflict);
+			if(await SQLquery.CreateData(login, email)!=null) return StatusCode(StatusCodes.Status409Conflict);
 			return StatusCode(200);
 		}
 
@@ -58,7 +58,7 @@ namespace BlazorApp3.Controllers
 		{
 			JsonObject json;
 			json = JsonNode.ParseAsync(Request.Body).Result.AsObject();
-			byte[] login = Encoding.ASCII.GetBytes(json["login"].GetValue<string>());
+			byte[] login = Encoding.UTF8.GetBytes(json["login"].GetValue<string>());
 			List<Models.AccountModel> i = new List<Models.AccountModel>();
 			if ((i = await SQLquery.SearchData(login)) != null) {
 				return Ok(CreateJWT(Convert.ToBase64String(login)));
@@ -66,14 +66,15 @@ namespace BlazorApp3.Controllers
 			return StatusCode(404);
 		}
 
-		[HttpGet("GetData")]
-		[Authorize]
+		[HttpPost("GetData")]
+		//[Authorize]
 		public async Task<IActionResult> GetData()
 		{
 			JsonObject json;
-			json = JsonNode.ParseAsync(Response.Body).Result.AsObject();
+			
+			json = JsonNode.ParseAsync(Request.Body).Result.AsObject();
 			string path = json["path"].GetValue<string>();
-			byte[] login = json["login"].GetValue<byte[]>();
+			byte[] login = Encoding.UTF8.GetBytes(json["login"].GetValue<string>());
 			List<RoutesModel> filesystem;
 			try
 			{
@@ -81,7 +82,7 @@ namespace BlazorApp3.Controllers
 			}
 			catch (Exception ex)
 			{
-				return StatusCode(StatusCodes.Status406NotAcceptable);
+				return Ok("problem;хууууй");
 			}
 			var files = filesystem.FindAll(x => StringHelper.FirstContains(path, x.Route));
 			string parse = "";
@@ -89,7 +90,7 @@ namespace BlazorApp3.Controllers
 			{
 				parse += file.Route + "?" + Convert.ToString(file.IsFolder)+'\n';
 			}
-			return Ok(parse);
+			return Ok("ok;"+parse);
 		}
 
 

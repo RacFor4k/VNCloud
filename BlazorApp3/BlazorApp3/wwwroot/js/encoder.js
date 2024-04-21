@@ -1,21 +1,35 @@
-﻿window.encryptAES = (byteArray, key) => {
-    // Используйте библиотеку CryptoJS для шифрования
-    var wordArray = CryptoJS.lib.WordArray.create(byteArray);
-    var iv = CryptoJS.enc.Hex.parse('000102030405060708090a0b0c0d0e0f'); // Статический IV
-    var encrypted = CryptoJS.AES.encrypt(wordArray, key, { iv: iv }).toString();
-    return encrypted;
+﻿// Пример шифрования с явным указанием IV (соли)
+
+function bytesToWordArray(bytes) {
+    const words = [];
+    for (let i = 0; i < bytes.length; i += 4) {
+        words.push(
+            (bytes[i] << 24) | (bytes[i + 1] << 16) | (bytes[i + 2] << 8) | bytes[i + 3]
+        );
+    }
+    return CryptoJS.lib.WordArray.create(words, bytes.length);
 }
 
-window.decryptAES = (encryptedData, key) => {
-    // Используйте библиотеку CryptoJS для расшифровывания
-    var iv = CryptoJS.enc.Hex.parse('000102030405060708090a0b0c0d0e0f'); // Тот же статический IV
-    var decrypted = CryptoJS.AES.decrypt(encryptedData, key, { iv: iv });
-    var typedArray = new Uint8Array(decrypted.sigBytes);
-    decrypted.words.forEach((word, index) => {
-        typedArray[index * 4] = (word >> 24) & 0xff;
-        typedArray[index * 4 + 1] = (word >> 16) & 0xff;
-        typedArray[index * 4 + 2] = (word >> 8) & 0xff;
-        typedArray[index * 4 + 3] = word & 0xff;
+window.encryptAES = (dataBytes, keyBytes, ivBytes) => {
+    const dataWordArray = bytesToWordArray(dataBytes);
+    const keyWordArray = bytesToWordArray(keyBytes);
+    const ivWordArray = bytesToWordArray(ivBytes);
+    const encrypted = CryptoJS.AES.encrypt(dataWordArray, keyWordArray, {
+        iv: ivWordArray,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
     });
-    return typedArray;
+    return encrypted.toString();
+}
+
+// Пример дешифрования с явным указанием IV (соли)
+window.decryptAES = (encryptedData, keyBytes, ivBytes) => {
+    const keyWordArray = bytesToWordArray(keyBytes);
+    const ivWordArray = bytesToWordArray(ivBytes);
+    const decrypted = CryptoJS.AES.decrypt(encryptedData, keyWordArray, {
+        iv: ivWordArray,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+    });
+    return decrypted.toString(CryptoJS.enc.Utf8);
 }

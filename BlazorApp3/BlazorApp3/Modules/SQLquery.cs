@@ -37,12 +37,22 @@ namespace BlazorApp3.Modules
         /// </summary>
         /// <param name="login"></param>
         /// <returns></returns>
-        public static async Task<List<AccountModel>> SearchData(byte[] login) {
-            string sql = "select * from accounts where login=@login;";
-            var temp = _data.LoadData<AccountModel, dynamic>(sql, new { }, _config);
-            if (temp.Result.Count == 0)
+        public static async Task<List<AccountModel>> SearchData(byte[] btlogin) {
+            var login = Convert.ToBase64String(btlogin);
+            string sql = "select * from accounts where login = @login;";
+            var temp = await _data.LoadData<AccountModel, dynamic>(sql, new { login = login }, _config);
+            if (temp.Count == 0)
                 throw (new Exception("nothing found"));
-            return temp.Result;
+            return temp;
+        }
+
+        public static async Task<List<AccountModel>> SearchData(string email)
+        {
+            string sql = "select * from accounts where email = @email;";
+            var temp = await _data.LoadData<AccountModel, dynamic>(sql, new { email }, _config);
+            if (temp.Count == 0)
+                throw (new Exception("nothing found"));
+            return temp;
         }
         /// <summary>
         /// Возвращает пути по ID владельца
@@ -51,7 +61,7 @@ namespace BlazorApp3.Modules
         /// <returns></returns>
         public static async Task<List<RoutesModel>> SearchData(int parentId)
         {
-            string sql = "select * from routes where parentId=@parentId;";
+            string sql = "select * from routes where parentId = @parentId;";
             var temp = _data.LoadData<RoutesModel, dynamic>(sql, new { parentId }, _config);
             if (temp.Result.Count == 0)
                 throw (new Exception("nothing found"));
@@ -63,12 +73,13 @@ namespace BlazorApp3.Modules
         /// <param name="login"></param>
         /// <param name="email"></param>
         /// <returns></returns>
-        public static async Task<string> CreateData(byte[] login, string email)
+        public static async Task<string> CreateData(byte[] btlogin, string email)
         {
             try
             {
+                var login = Convert.ToBase64String(btlogin);
                 string sql = "insert into accounts (login, email) values (@login, @email);";
-                await _data.SaveData(sql, new { login, email }, _config);
+                await _data.SaveData(sql, new { login = login, email= email }, _config);
                 return null;
             }
             catch (Exception ex)

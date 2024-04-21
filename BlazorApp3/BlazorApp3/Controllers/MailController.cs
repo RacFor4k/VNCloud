@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 using BlazorApp3.Models;
+using BlazorApp3.Modules;
 
 namespace BlazorApp3.Controllers
 {
@@ -27,7 +28,6 @@ namespace BlazorApp3.Controllers
             string mail = json["email"].GetValue<string>();
             string body;
             string code = await AuthCode.GenerateCode(DateTime.Now.Nanosecond, login);
-
             using (FileStream fs = new FileStream("GmailAPI/GmailAttachment/gmailReqest.html", FileMode.Open))
             {
                 byte[] buffer = new byte[fs.Length];

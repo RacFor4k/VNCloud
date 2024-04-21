@@ -121,7 +121,7 @@
         byte[] buffer = Encoding.UTF8.GetBytes(registerModel.Login);
         buffer = await encoder.Encode(buffer);
         JsonObject jsobj = new JsonObject();
-        jsobj.Add("login", Encoding.ASCII.GetString(buffer));
+        jsobj.Add("login", Encoding.UTF8.GetString(buffer));
         jsobj.Add("email", registerModel.Email);
         jsobj.Add("code", keyModel.Vkey);
         var status = await httpClient.PostAsync(httpClient.BaseAddress + "api/DataBase/CreateAccount", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));
@@ -161,7 +161,8 @@
         JsonObject jsobj = new JsonObject();
 
 
-        jsobj.Add("login", Encoding.ASCII.GetString(buffer));
+
+        jsobj.Add("login", Encoding.UTF8.GetString(buffer));
         jsobj.Add("email", registerModel.Email);
         Console.WriteLine(httpClient.BaseAddress + "api/SendMail");
         await httpClient.PostAsync(httpClient.BaseAddress + "api/Gmail/SendMail", new StringContent(jsobj.ToJsonString(), Encoding.UTF8, System.Net.Mime.MediaTypeNames.Text.Plain));

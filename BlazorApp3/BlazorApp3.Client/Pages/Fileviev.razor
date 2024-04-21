@@ -29,10 +29,10 @@
     @foreach (var route in routes.Split('/'))
     {
         
-        <a class="d-inline h-5" style="text-decoration:none;" onclick="@GoToFolder(new FileInfo(routes.Substring(0,routes.Split(route)[0].Length + route.Length - 2),true,JS, Convert.FromBase64String(userdata.Split(';')[1])))"> @route </a>
+        <a class="d-inline h-5" style="text-decoration:none;" > @route </a>
         <p class="d-inline h-5" style="text-decoration:none;"> > </p>
     }
-    
+    <InputFile OnChange="@LoadFile"></InputFile>
 </div>
     <div class="table-responsive">
         <table class="table">
@@ -71,7 +71,7 @@
 
     private Modal modal = default!;
     private string routes = "Cloud/";
-    static string host;
+    static string host ="host/";
     private FileInfo currentFile;
     private string newFileName;
     string userdata = "";
@@ -82,8 +82,8 @@
 
         if (!string.IsNullOrWhiteSpace(userdata))
         {
-            var dataArray = userdata.Split(';', 2);
-            if (dataArray.Length == 2)
+            var dataArray = userdata.Split(';', 3);
+            if (dataArray.Length == 3)
                 return dataArray[1];
         }
         return null;
@@ -94,18 +94,23 @@
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!string.IsNullOrWhiteSpace(await JS.InvokeAsync<string>("localStorage.getItem", "user").ConfigureAwait(false)))
+        if (string.IsNullOrWhiteSpace(await JS.InvokeAsync<string>("sessionStorage.getItem", "user").ConfigureAwait(false)))
         {
             Navigation.NavigateTo("/");
+            return;
         }
         if (firstRender)
         {
-            
-                await JS.InvokeVoidAsync("import", "./js/encoder.js");
-            
-            userdata = await JS.InvokeAsync<string>("localStorage.getItem", "user").ConfigureAwait(false);
+
+            await JS.InvokeVoidAsync("import", "./js/encoder.js");
+
+            userdata = await JS.InvokeAsync<string>("sessionStorage.getItem", "user").ConfigureAwait(false);
+
         }
-        await GoToFolder(new FileInfo(host, true, JS, Convert.FromBase64String(userdata.Split(';')[1])));
+        var r = userdata.Split(';');
+        var d = userdata.Split(';')[0];
+        var f = Convert.FromBase64String(d);
+        await GoToFolder(new FileInfo(host, true, JS, f));
         await base.OnAfterRenderAsync(firstRender);
     }
 
@@ -177,23 +182,30 @@
     private async Task GoToFolder(FileInfo file)
     {
         JsonObject json = new JsonObject();
-        json.Add("path", file.Road);
-        routes = file.Road;
-        json.Add("login", JsonNode.Parse(User.Login));
+        json.Add("path", await file.GetEncodedPath());
+        routes = await file.GetEncodedPath();
+        json.Add("login", userdata.Split(';')[2]);
 
         var request = new HttpRequestMessage
             {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(User.HttpClient.BaseAddress + "/api/GetData"),
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(User.HttpClient.BaseAddress + "api/DataBase/GetData"),
                 Content = new StringContent(json.ToJsonString(), Encoding.UTF8, MediaTypeNames.Text.Plain),
+                //Version = Version.Parse("2.0"),
             };
         request.Headers.Add("Authorization", "Bearer " + await GetJWT());
         var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
+        byte[] buffer = new byte[0];
+        buffer = await response.Content.ReadAsByteArrayAsync();
+        var responseBody = Encoding.UTF8.GetString(buffer);
+        var status = responseBody.Split(";")[0].Split('.');
+        responseBody = responseBody.Substring(responseBody.IndexOf(';') + 1);
+        if(status[0] != "problem")
+        {
+            files = Parse(responseBody);
+        }
 
-        var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-        files = Parse(responseBody);
     }
 
     private List<FileInfo> Parse(string sourse)
@@ -222,21 +234,54 @@
             currentFile.Name = newFileName + '.' + currentFile.Name.Split('.')[1];
         }
         Console.WriteLine(currentFile.Name);
-        UpdateFilesList();
+
         await modal.HideAsync();
     }
-    private void UpdateFilesList()
+    private async Task LoadFile(InputFileChangeEventArgs e)
     {
-        // Обновить список файлов после переименования
+        foreach(var file in e.GetMultipleFiles(100))
+        {
+            StreamContent st = new StreamContent(file.OpenReadStream(long.MaxValue));
+            var request = new HttpRequestMessage
+                {
+                    Method = HttpMethod.Post,
+                    RequestUri = new Uri(User.HttpClient.BaseAddress + "api/DataBase/GetData"),
+                    //Version = Version.Parse("2.0"),
+                };
+            request.Headers.Add("Informatoin", "Login " + userdata.Split(';')[2]);
+            var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
+        }
     }
 
     public class FileInfo
     {
+        private IJSRuntime JS;
+        private byte[] code;
         public string Name { get; set; }
         public bool IsFolder { get; set; }
         public string Road { get; set; }
+
+        public async Task<string> GetEncodedPath()
+        {
+            if (Road == "/")
+                return Road;
+            var road = Road.Substring(5);
+            var temp = Road.Split('/');
+            BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
+            byte[] buffer = new byte[0];
+            foreach (var item in temp)
+            {
+                buffer = Base64UrlTextEncoder.Decode(item);
+                buffer = await encoder.Encode(buffer);
+                road += Encoding.UTF8.GetString(buffer) + '/';
+            }
+            return road;
+        }
+
         // Другие свойства файла
-        public FileInfo(string road, IJSRuntime? JS, byte[] code){
+        public FileInfo(string road, IJSRuntime? js, byte[] code){
+            this.JS = js;
+            this.code = code;
             Road = road.Split(host)[0];
             int ls = road.LastIndexOf('/');
             BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
@@ -251,14 +296,27 @@
 
         public FileInfo(string road, bool isFolder, IJSRuntime JS, byte[] code)
         {
-            Road = road.Split(host)[0];
-            int ls = road.LastIndexOf('/');
-            BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
-            byte[] buffer = Convert.FromBase64String(road.Substring(++ls, road.Length - ls));
-            encoder.Decode(buffer);
-            Name = Encoding.UTF8.GetString(buffer);
-            IsFolder = false;
-            
+            if (host != road)
+            {
+                Road = road.Split("host/")[1];
+                int ls = road.LastIndexOf('/');
+                var temp = Road.Split('/');
+                Road = host;
+                BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
+                byte[] buffer = new byte[0];
+                foreach(var item in temp)
+                {
+                    buffer = Base64UrlTextEncoder.Decode(item);
+                    buffer = encoder.Decode(buffer).Result;
+                    Road += Encoding.UTF8.GetString(buffer) + '/';
+                }
+                Name += Encoding.UTF8.GetString(buffer);
+                IsFolder = false;
+            }
+            else {
+                Name = "";
+                Road = "/";
+            }
 
         }
     }
