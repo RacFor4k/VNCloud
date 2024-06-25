@@ -3,9 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34723.18
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorApp3", "BlazorApp3\BlazorApp3\BlazorApp3.csproj", "{9B5BAAA6-7325-4183-9FC1-72E2A85A6B56}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorApp3", "BlazorApp3\BlazorApp3\BlazorApp3.csproj", "{9B5BAAA6-7325-4183-9FC1-72E2A85A6B56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorApp3.Client", "BlazorApp3\BlazorApp3.Client\BlazorApp3.Client.csproj", "{FB515753-6F51-4D38-886C-FBBDABCBDE0A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorApp3.Client", "BlazorApp3\BlazorApp3.Client\BlazorApp3.Client.csproj", "{FB515753-6F51-4D38-886C-FBBDABCBDE0A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataLibrary", "DataLibrary\DataLibrary.csproj", "{F6D928B2-9F3D-41A7-ADDC-C2315F258DC2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A8212ED6-7A5A-43C4-89F5-5156F4F63B5D}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +28,10 @@ Global
 		{FB515753-6F51-4D38-886C-FBBDABCBDE0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB515753-6F51-4D38-886C-FBBDABCBDE0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB515753-6F51-4D38-886C-FBBDABCBDE0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6D928B2-9F3D-41A7-ADDC-C2315F258DC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6D928B2-9F3D-41A7-ADDC-C2315F258DC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6D928B2-9F3D-41A7-ADDC-C2315F258DC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6D928B2-9F3D-41A7-ADDC-C2315F258DC2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
