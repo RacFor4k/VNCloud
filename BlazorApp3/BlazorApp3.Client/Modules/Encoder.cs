@@ -5,51 +5,43 @@ using System.Text;
 
 namespace BlazorApp3.Client.Modules
 {
-    public class EncoderStream : MemoryStream{
+    public class EncoderStream{
 
         //private MemoryStream _stream = new MemoryStream();
         private Encoder _encoder;
+        private Stream _stream;
 
-        public EncoderStream(Encoder encoder)
+        public EncoderStream(Stream stream, Encoder encoder)
         {
+            _stream = stream;
             _encoder = encoder;
          
         }
 
-        public EncoderStream(IJSRuntime runtime, byte[] encoderKey)
+        public async Task WriteAsync(byte[] buffer, int offset, int count)
         {
-            _encoder = new Encoder(runtime, encoderKey);
+            await _encoder.Encode(buffer);
+            await _stream.WriteAsync(buffer, offset, count);
+
         }
 
-        public MemoryStream GetDecodeStream()
+        public async Task ReadAsync(byte[] buffer, int offset, int count)
         {
-            return new MemoryStream(base.ToArray());
-        }
-
-        public int Read(byte[] buffer, int offset, int length)
-        {
-            var i = base.Read(buffer, offset, length);
-            _encoder.Decode(buffer);
-            return i;
-        }
-
-        public void Write(byte[] buffer, int offset, int length)
-        {
-            _encoder.Encode(buffer);
-            base.Write(buffer, offset, length);
-        }
-
-        public async Task ReadAsync(byte[] buffer, int offset, int length)
-        {
-            await base.ReadAsync(buffer, offset, length);
+            await _stream.ReadAsync(buffer, offset, count);
             await _encoder.Decode(buffer);
         }
 
-        public async Task WriteAsync(byte[] buffer, int offset, int length)
+        public Stream GetStream()
         {
-            await _encoder.Encode(buffer);
-            await base.WriteAsync(buffer, offset, length);
+            return _stream;
         }
+
+        public async Task CopyToAsync(Stream destination)
+        {
+            await _stream.CopyToAsync(destination);
+        }
+        
+
     }
     public class Encoder
     {
@@ -66,12 +58,14 @@ namespace BlazorApp3.Client.Modules
 
         public async Task<byte[]> Encode(byte[] buffer)
         {
-            return Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("encryptAES", [buffer, _encoderKey, _encoderKey]));
+            buffer = Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("encryptAES", [buffer, _encoderKey, _encoderKey]));
+            return buffer;
         }
 
         public async Task<byte[]> Decode(byte[] buffer)
         {
-            return Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("dencryptAES", [buffer, _encoderKey, _encoderKey]));
+            buffer = Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("dencryptAES", [buffer, _encoderKey, _encoderKey]));
+            return buffer;
         }
     }
 }
