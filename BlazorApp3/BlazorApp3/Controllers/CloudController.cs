@@ -15,7 +15,6 @@ namespace BlazorApp3.Controllers
     [ApiController]
     public class CloudController : ControllerBase
     {
-        private const string host = "C:/Prifiles";
 
         [HttpGet("DownloadFile")]
         [Authorize]

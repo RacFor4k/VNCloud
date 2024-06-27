@@ -1,5 +1,14 @@
 ﻿namespace BlazorApp3.Modules.Common
 {
+    static class Vars
+    {
+        public static string host = "C:\\Profiles";
+
+    }
+}
+
+namespace BlazorApp3.Modules.Common
+{
     public static class Common<T>
     {
         public delegate int Comparator(T x, T y);
