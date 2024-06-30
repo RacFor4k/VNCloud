@@ -73,7 +73,7 @@ namespace BlazorApp3.Modules
         /// <param name="login"></param>
         /// <param name="email"></param>
         /// <returns></returns>
-        public static async Task<string> CreateData(byte[] btlogin, string email)
+        public static async Task<string?> CreateData(byte[] btlogin, string email)
         {
             try
             {
@@ -94,7 +94,7 @@ namespace BlazorApp3.Modules
         /// <param name="idParent"></param>
         /// <param name="url"></param>
         /// <returns></returns>
-        public static async Task<string> CreateData(int idParent, string url, bool isFolder = false)
+        public static async Task<string?> CreateData(int idParent, string url, bool isFolder = false)
         {
             try
             {

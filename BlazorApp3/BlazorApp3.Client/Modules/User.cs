@@ -7,7 +7,8 @@
             BaseAddress = new Uri("https://localhost:7225")
         };
         public static int Id { get; set; }
-        public static string Jwt { get; set; }
+        public static string? Jwt { get; set; }
         public static byte[] Login { get; set; }
+        public static byte[] Key { get; set; }
     }
 }

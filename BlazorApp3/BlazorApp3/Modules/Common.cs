@@ -1,10 +1,19 @@
-﻿namespace BlazorApp3.Modules.Common
-{
-    static class Vars
-    {
-        public static string host = "C:\\Profiles";
+﻿using Duende.IdentityServer.Models;
+using Microsoft.AspNetCore.WebUtilities;
+using System.ComponentModel;
+using System.Security.Cryptography.X509Certificates;
 
+namespace BlazorApp3.Modules.Common
+{
+    public static class Vars
+    {
+        public static string host = "C:\\Profiles\\";
+        public static string Path(byte[] login)
+        {
+            return host+Base64UrlTextEncoder.Encode(login)+"\\";
+        }
     }
+
 }
 
 namespace BlazorApp3.Modules.Common

@@ -74,20 +74,7 @@
     static string host ="host/";
     private FileInfo currentFile;
     private string newFileName;
-    string userdata = "";
 
-
-    private async Task<string> GetJWT()
-    {
-
-        if (!string.IsNullOrWhiteSpace(userdata))
-        {
-            var dataArray = userdata.Split(';', 3);
-            if (dataArray.Length == 3)
-                return dataArray[1];
-        }
-        return null;
-    }
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -104,13 +91,12 @@
 
             await JS.InvokeVoidAsync("import", "./js/encoder.js");
 
-            userdata = await JS.InvokeAsync<string>("sessionStorage.getItem", "user").ConfigureAwait(false);
+            User.Login = Encoding.UTF8.GetBytes(await JS.InvokeAsync<string>("sessionStorage.getItem", "userLogin").ConfigureAwait(false));
+            User.Jwt = await JS.InvokeAsync<string>("sessionStorage.getItem", "userjwt").ConfigureAwait(false);
+            User.Key = Encoding.UTF8.GetBytes(await JS.InvokeAsync<string>("sessionStorage.getItem", "userKey").ConfigureAwait(false));
 
         }
-        var r = userdata.Split(';');
-        var d = userdata.Split(';')[0];
-        var f = Convert.FromBase64String(d);
-        await GoToFolder(new FileInfo(host, true, JS, f));
+        await GoToFolder(new FileInfo(host, true, JS, User.Key));
         await base.OnAfterRenderAsync(firstRender);
     }
 
@@ -139,6 +125,13 @@
 
     private async Task DownloadFile(FileInfo file)
     {
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, User.HttpClient.BaseAddress + "/api/file/download");
+        request.Headers.Add("Login",Encoding.UTF8.GetString(User.Login));
+        request.Headers.Add("Path", file.Road);
+        var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        await JS.InvokeVoidAsync("downloadFileFromStream", file.Name, new EncoderStream(JS, Convert.FromBase64String(userdata.Split(';')[0])).GetDecodeStream());
+        var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         // Здесь должен быть код для скачивания файла
         JsonObject json = new JsonObject();
         json.Add("path", file.Road);
@@ -152,10 +145,7 @@
                 Content = new StringContent(json.ToJsonString(), Encoding.UTF8, MediaTypeNames.Text.Plain),
             };
         request.Headers.Add("Authorization", "Bearer " + await GetJWT());
-        var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        await JS.InvokeVoidAsync("downloadFileFromStream", file.Name, new EncoderStream(JS, Convert.FromBase64String(userdata.Split(';')[0])).GetDecodeStream());
-        var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        
     }
 
     private void DeleteFile(FileInfo file)
@@ -193,7 +183,7 @@
                 Content = new StringContent(json.ToJsonString(), Encoding.UTF8, MediaTypeNames.Text.Plain),
                 //Version = Version.Parse("2.0"),
             };
-        request.Headers.Add("Authorization", "Bearer " + await GetJWT());
+        request.Headers.Add("Authorization", "Bearer " + User.Jwt);
         var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         byte[] buffer = new byte[0];
@@ -214,7 +204,7 @@
         List<FileInfo> filesInfo = new List<FileInfo>();
         foreach(var file in files)
         {
-            filesInfo.Add(new FileInfo(file.Split('?')[0], Convert.ToBoolean(file.Split('?')[1]), JS, Convert.FromBase64String(userdata.Split(';')[1])));
+            filesInfo.Add(new FileInfo(file.Split('?')[0], Convert.ToBoolean(file.Split('?')[1]), JS, User.Key));
         }
         return filesInfo;
     }

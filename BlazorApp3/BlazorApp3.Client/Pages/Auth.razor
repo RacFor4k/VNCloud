@@ -117,8 +117,12 @@
             await responce.Content.ReadAsStreamAsync().Result.ReadAsync(buffer);
             jwt = Encoding.UTF8.GetString(buffer);
             User.Jwt = jwt;
-            await JS.InvokeVoidAsync("sessionStorage.removeItem", "user").ConfigureAwait(false);
-            await JS.InvokeVoidAsync("sessionStorage.setItem", "user", $"{Encoding.UTF8.GetString(log)};{jwt};{Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(authModel.Login + authModel.Password)))}").ConfigureAwait(false);
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "userLogin").ConfigureAwait(false);
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "userJwt").ConfigureAwait(false);
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", "userKey").ConfigureAwait(false);
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "userLogin", Encoding.UTF8.GetString(log)).ConfigureAwait(false);
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "userJwt", jwt).ConfigureAwait(false);
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "userKey", Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(authModel.Login + authModel.Password)))).ConfigureAwait(false);
             messages.Add(CreateToastMessage(ToastType.Success));
             Navigation.NavigateTo("/cloud");
         }
