@@ -66,15 +66,24 @@ namespace BlazorApp3.Controllers
 			return StatusCode(404);
 		}
 
-		[HttpPost("GetData")]
+		[HttpGet("GetData")]
 		//[Authorize]
 		public async Task<IActionResult> GetData()
 		{
 			JsonObject json;
 			
-			json = JsonNode.ParseAsync(Request.Body).Result.AsObject();
-			string path = json["path"].GetValue<string>();
-			byte[] login = Encoding.UTF8.GetBytes(json["login"].GetValue<string>());
+			string path;
+			byte[] login;
+
+			try
+			{
+				path = Request.Headers["Path"];
+				login = Encoding.UTF8.GetBytes(Request.Headers["Login"]);
+			}
+			catch
+			{
+				return BadRequest("Cannot read headers");
+			}
 			List<RoutesModel> filesystem;
 			try
 			{

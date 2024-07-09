@@ -40,7 +40,7 @@ namespace BlazorApp3.Modules
         public static async Task<List<AccountModel>> SearchData(byte[] btlogin) {
             var login = Convert.ToBase64String(btlogin);
             string sql = "select * from accounts where login = @login;";
-            var temp = await _data.LoadData<AccountModel, dynamic>(sql, new { login = login }, _config);
+            var temp = await _data.LoadData<AccountModel, dynamic>(sql, new { login }, _config);
             if (temp.Count == 0)
                 throw (new Exception("nothing found"));
             return temp;

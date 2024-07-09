@@ -5,6 +5,7 @@
 
 
 @using BlazorApp3.Client.Modules
+@using BlazorApp3.Client.Modules.Common.Vars.Http
 @using Microsoft.AspNetCore.WebUtilities
 @using System.IO
 @using Microsoft.AspNetCore.Components.Forms
@@ -70,8 +71,8 @@
     private IList<FileInfo> files = new List<FileInfo>();
 
     private Modal modal = default!;
-    private string routes = "Cloud/";
-    static string host ="host/";
+    private string routes = "Cloud\\";
+    static string host ="host\\";
     private FileInfo currentFile;
     private string newFileName;
 
@@ -81,19 +82,24 @@
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (string.IsNullOrWhiteSpace(await JS.InvokeAsync<string>("sessionStorage.getItem", "user").ConfigureAwait(false)))
-        {
-            Navigation.NavigateTo("/");
-            return;
-        }
         if (firstRender)
         {
 
             await JS.InvokeVoidAsync("import", "./js/encoder.js");
-
-            User.Login = Encoding.UTF8.GetBytes(await JS.InvokeAsync<string>("sessionStorage.getItem", "userLogin").ConfigureAwait(false));
-            User.Jwt = await JS.InvokeAsync<string>("sessionStorage.getItem", "userjwt").ConfigureAwait(false);
-            User.Key = Encoding.UTF8.GetBytes(await JS.InvokeAsync<string>("sessionStorage.getItem", "userKey").ConfigureAwait(false));
+            await JS.InvokeVoidAsync("import", "./js/StreamAPI.js");
+            try
+            {
+                User.Login = Encoding.UTF8.GetBytes(await JS.InvokeAsync<string>("sessionStorage.getItem", "userLogin").ConfigureAwait(false));
+                User.Jwt = await JS.InvokeAsync<string>("sessionStorage.getItem", "userjwt").ConfigureAwait(false);
+                User.Key = Encoding.UTF8.GetBytes(await JS.InvokeAsync<string>("sessionStorage.getItem", "userKey").ConfigureAwait(false));
+                Console.WriteLine(User.Jwt);
+            }
+            catch
+            {
+                await JS.InvokeVoidAsync("sessionStorage.removeItem", "userLogin").ConfigureAwait(false);
+                await JS.InvokeVoidAsync("sessionStorage.removeItem", "userJwt").ConfigureAwait(false);
+                await JS.InvokeVoidAsync("sessionStorage.removeItem", "userKey").ConfigureAwait(false);
+            }
 
         }
         await GoToFolder(new FileInfo(host, true, JS, User.Key));
@@ -125,27 +131,16 @@
 
     private async Task DownloadFile(FileInfo file)
     {
-        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, User.HttpClient.BaseAddress + "/api/file/download");
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, User.HttpClient.BaseAddress + APIUrl.FileAPI.download);
         request.Headers.Add("Login",Encoding.UTF8.GetString(User.Login));
         request.Headers.Add("Path", file.Road);
+        request.Headers.Add("Authorization", "Bearer " + User.Jwt);
         var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        await JS.InvokeVoidAsync("downloadFileFromStream", file.Name, new EncoderStream(JS, Convert.FromBase64String(userdata.Split(';')[0])).GetDecodeStream());
-        var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        // Здесь должен быть код для скачивания файла
-        JsonObject json = new JsonObject();
-        json.Add("path", file.Road);
-        routes = file.Road;
-        json.Add("login", JsonNode.Parse(userdata.Split(';')[0]));
+        if (response.IsSuccessStatusCode)
+        {
+            //Реализация сохранения файла из потока
 
-        var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(User.HttpClient.BaseAddress + "/api/DownloadFile"),
-                Content = new StringContent(json.ToJsonString(), Encoding.UTF8, MediaTypeNames.Text.Plain),
-            };
-        request.Headers.Add("Authorization", "Bearer " + await GetJWT());
-        
+        }
     }
 
     private void DeleteFile(FileInfo file)
@@ -169,33 +164,28 @@
         }
     }
 
+    //Переход по папкам на сервере
     private async Task GoToFolder(FileInfo file)
     {
-        JsonObject json = new JsonObject();
-        json.Add("path", await file.GetEncodedPath());
-        routes = await file.GetEncodedPath();
-        json.Add("login", userdata.Split(';')[2]);
 
-        var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(User.HttpClient.BaseAddress + "api/DataBase/GetData"),
-                Content = new StringContent(json.ToJsonString(), Encoding.UTF8, MediaTypeNames.Text.Plain),
-                //Version = Version.Parse("2.0"),
-            };
+
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, User.HttpClient.BaseAddress + APIUrl.DataBaseAPI.getData);
+        request.Headers.Add("Login", Encoding.UTF8.GetString(User.Login));
+        request.Headers.Add("Path", await file.GetEncodedPath());
         request.Headers.Add("Authorization", "Bearer " + User.Jwt);
         var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        byte[] buffer = new byte[0];
-        buffer = await response.Content.ReadAsByteArrayAsync();
-        var responseBody = Encoding.UTF8.GetString(buffer);
-        var status = responseBody.Split(";")[0].Split('.');
-        responseBody = responseBody.Substring(responseBody.IndexOf(';') + 1);
-        if(status[0] != "problem")
+        if (response.IsSuccessStatusCode)
         {
-            files = Parse(responseBody);
+            byte[] buffer = new byte[0];
+            buffer = await response.Content.ReadAsByteArrayAsync();
+            var responseBody = Encoding.UTF8.GetString(buffer);
+            var status = responseBody.Split(";")[0].Split('.');
+            responseBody = responseBody.Substring(responseBody.IndexOf(';') + 1);
+            if (status[0] != "problem")
+            {
+                files = Parse(responseBody);
+            }
         }
-
     }
 
     private List<FileInfo> Parse(string sourse)
@@ -231,14 +221,19 @@
     {
         foreach(var file in e.GetMultipleFiles(100))
         {
-            StreamContent st = new StreamContent(file.OpenReadStream(long.MaxValue));
-            var request = new HttpRequestMessage
-                {
-                    Method = HttpMethod.Post,
-                    RequestUri = new Uri(User.HttpClient.BaseAddress + "api/DataBase/GetData"),
-                    //Version = Version.Parse("2.0"),
-                };
-            request.Headers.Add("Informatoin", "Login " + userdata.Split(';')[2]);
+            var encoder = new Modules.Encoder(JS, User.Key);
+            byte[] buff = new byte[0];
+            MemoryStream stream = new MemoryStream();
+            await file.OpenReadStream(long.MaxValue).CopyToAsync(stream);
+            stream = new MemoryStream(await encoder.Encode(stream.ToArray()));
+            StreamContent st = new StreamContent(stream);
+            var request = new HttpRequestMessage(HttpMethod.Post, User.HttpClient.BaseAddress + APIUrl.FileAPI.upload);
+            request.Headers.Add("Login", Encoding.UTF8.GetString(User.Login));
+            request.Headers.Add("Path", host + await encoder.EncodeHash(file.Name, System.Security.Cryptography.SHA1.Create().ComputeHash));
+            request.Headers.Add("Authorization", "Bearer " + User.Jwt);
+            request.Content = st;
+            Console.WriteLine(User.Jwt);
+
             var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
         }
     }
@@ -253,17 +248,17 @@
 
         public async Task<string> GetEncodedPath()
         {
-            if (Road == "/")
+            if (Road == "\\")
                 return Road;
             var road = Road.Substring(5);
-            var temp = Road.Split('/');
+            var temp = Road.Split('\\');
             BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
             byte[] buffer = new byte[0];
             foreach (var item in temp)
             {
                 buffer = Base64UrlTextEncoder.Decode(item);
                 buffer = await encoder.Encode(buffer);
-                road += Encoding.UTF8.GetString(buffer) + '/';
+                road += Encoding.UTF8.GetString(buffer) + '\\';
             }
             return road;
         }
@@ -273,7 +268,7 @@
             this.JS = js;
             this.code = code;
             Road = road.Split(host)[0];
-            int ls = road.LastIndexOf('/');
+            int ls = road.LastIndexOf('\\');
             BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
             Name =  road.Substring(++ls, road.Length-ls);
             IsFolder = false; 
@@ -288,9 +283,9 @@
         {
             if (host != road)
             {
-                Road = road.Split("host/")[1];
-                int ls = road.LastIndexOf('/');
-                var temp = Road.Split('/');
+                Road = road.Split("Cloud\\")[1];
+                int ls = road.LastIndexOf('\\');
+                var temp = Road.Split('\\');
                 Road = host;
                 BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
                 byte[] buffer = new byte[0];
@@ -298,14 +293,14 @@
                 {
                     buffer = Base64UrlTextEncoder.Decode(item);
                     buffer = encoder.Decode(buffer).Result;
-                    Road += Encoding.UTF8.GetString(buffer) + '/';
+                    Road += Encoding.UTF8.GetString(buffer) + '\\';
                 }
                 Name += Encoding.UTF8.GetString(buffer);
                 IsFolder = false;
             }
             else {
                 Name = "";
-                Road = "/";
+                Road = "\\";
             }
 
         }

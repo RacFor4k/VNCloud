@@ -1,5 +1,8 @@
-﻿namespace BlazorApp3.Client.Modules
+﻿using System.Runtime.CompilerServices;
+
+namespace BlazorApp3.Client.Modules
 {
+    
     public static class User
     {
         public static HttpClient HttpClient { get; } = new HttpClient()

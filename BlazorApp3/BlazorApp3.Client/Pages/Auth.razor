@@ -114,8 +114,8 @@
         if (responce.StatusCode == System.Net.HttpStatusCode.OK)
         {
             string jwt;
-            await responce.Content.ReadAsStreamAsync().Result.ReadAsync(buffer);
-            jwt = Encoding.UTF8.GetString(buffer);
+            jwt = await responce.Content.ReadAsStringAsync();
+            //jwt = Encoding.UTF8.GetString(buffer);
             User.Jwt = jwt;
             await JS.InvokeVoidAsync("sessionStorage.removeItem", "userLogin").ConfigureAwait(false);
             await JS.InvokeVoidAsync("sessionStorage.removeItem", "userJwt").ConfigureAwait(false);

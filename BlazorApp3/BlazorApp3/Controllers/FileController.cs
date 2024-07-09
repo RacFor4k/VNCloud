@@ -14,8 +14,8 @@ namespace BlazorApp3.Controllers
     public class FileController : Controller
     {
         //Скачивание файла с сервера
-        [HttpGet("/download")]
-        [Authorize]
+        [HttpGet("download")]
+        //[Authorize]
         public async Task<IActionResult> Download()
         {
             //Получение метаданных из раголовка запроса
@@ -56,8 +56,8 @@ namespace BlazorApp3.Controllers
         }
 
         //Загрузка файла на сервер
-        [HttpPost("/upload")]
-        [Authorize]
+        [HttpPost("upload")]
+        //[Authorize]
         public async Task<IActionResult> Upload()
         {
             byte[] login;
@@ -69,8 +69,8 @@ namespace BlazorApp3.Controllers
             }
             catch { return BadRequest("Bad account info"); }
             string filePath = Vars.Path(login) + path;
-            Directory.CreateDirectory(filePath.Substring(0, filePath.LastIndexOf('\\') - 1));
-            using (FileStream file = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            Directory.CreateDirectory(filePath.Substring(0, filePath.LastIndexOf('\\') + 1));
+            using (FileStream file = new FileStream(filePath, FileMode.Create))
             {
                 await Request.Body.CopyToAsync(file);
                 file.Close();
@@ -91,8 +91,8 @@ namespace BlazorApp3.Controllers
         }
 
         //Удаление файла
-        [HttpDelete("/delete")]
-        [Authorize]
+        [HttpDelete("delete")]
+        //[Authorize]
         public async Task<IActionResult> Delete()
         {
             byte[] login;

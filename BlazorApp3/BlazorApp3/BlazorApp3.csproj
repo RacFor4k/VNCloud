@@ -7,9 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="wwwroot\js\StreamAPI.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\js\StreamAPI.js" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Models\AccountModel.cs" />
     <Content Include="Models\HttpHelper.cs" />
     <Content Include="Models\RoutesModel.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\js\StreamAPI.js" />
   </ItemGroup>
 
   <ItemGroup>

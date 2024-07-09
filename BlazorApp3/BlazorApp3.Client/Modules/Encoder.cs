@@ -1,4 +1,5 @@
-﻿using Microsoft.JSInterop;
+﻿using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.JSInterop;
 using Microsoft.VisualBasic;
 using System.Text;
 
@@ -65,6 +66,30 @@ namespace BlazorApp3.Client.Modules
         public async Task<byte[]> Decode(byte[] buffer)
         {
             buffer = Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("dencryptAES", [buffer, _encoderKey, _encoderKey]));
+            return buffer;
+        }
+
+        public async Task<string> Encode(string buffer)
+        {
+            buffer = Base64UrlTextEncoder.Encode(Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("encryptAES", [Encoding.UTF8.GetBytes(buffer), _encoderKey, _encoderKey])));
+            return buffer;
+        }
+
+        public async Task<string> Decode(string buffer)
+        {
+            buffer = Base64UrlTextEncoder.Encode(Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("dencryptAES", [Encoding.UTF8.GetBytes(buffer), _encoderKey, _encoderKey])));
+            return buffer;
+        }
+
+        public async Task<string> EncodeHash(string buffer, Func<byte[], byte[]> HashFunc)
+        {
+            buffer = Base64UrlTextEncoder.Encode(HashFunc.Invoke(Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("encryptAES", [Encoding.UTF8.GetBytes(buffer), _encoderKey, _encoderKey]))));
+            return buffer;
+        }
+
+        public async Task<string> DecodeHash(string buffer, Func<byte[], byte[]> HashFunc)
+        {
+            buffer = Base64UrlTextEncoder.Encode(HashFunc.Invoke(Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("dencryptAES", [Encoding.UTF8.GetBytes(buffer), _encoderKey, _encoderKey]))));
             return buffer;
         }
     }
