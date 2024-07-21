@@ -3,7 +3,9 @@
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
-
+@using BlazorApp3.Client.Models
+@using BlazorApp3.Models
+@using Newtonsoft.Json;
 @using BlazorApp3.Client.Modules
 @using BlazorApp3.Client.Modules.Common.Vars.Http
 @using Microsoft.AspNetCore.WebUtilities
@@ -27,10 +29,10 @@
 <Toasts class="p-3" Messages="messages" Placement="ToastsPlacement.BottomLeft" />
 <div >
     
-    @foreach (var route in routes.Split('/'))
+    @foreach (var item in route.Split('\\'))
     {
         
-        <a class="d-inline h-5" style="text-decoration:none;" > @route </a>
+        <a class="d-inline h-5" style="text-decoration:none;" > @item </a>
         <p class="d-inline h-5" style="text-decoration:none;"> > </p>
     }
     <InputFile OnChange="@LoadFile"></InputFile>
@@ -47,7 +49,7 @@
                 @foreach (var file in files)
                 {
                     <tr class="rounded-lg" @ondblclick="()=>DbClikOnFile(file)">
-                        <td class="rounded-lg align-middle h5"><Icon Name="@(file.IsFolder ? IconName.Folder2: IconName.FileEarmark)"/>  @file.Name</td>
+                        <td class="rounded-lg align-middle h5"><Icon Name="@(file.IsFolder ? IconName.Folder2: IconName.FileEarmark)"/>  @file.decoded.Name</td>
 
                         <td class="d-flex justify-content-end">
                             <Button class="mr-5" @onclick="@(() => DownloadFile(file))">
@@ -71,10 +73,10 @@
     private IList<FileInfo> files = new List<FileInfo>();
 
     private Modal modal = default!;
-    private string routes = "Cloud\\";
-    static string host ="host\\";
+    static string route ="host";
     private FileInfo currentFile;
     private string newFileName;
+    private ClientFilesystem filesystem = new ClientFilesystem("Host");
 
     protected override async Task OnInitializedAsync()
     {
@@ -102,14 +104,14 @@
             }
 
         }
-        await GoToFolder(new FileInfo(host, true, JS, User.Key));
+        await GoToFolder(await new FileInfo(route, route, JS, true).Encode());
         await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task EditFile(FileInfo file)
     {
         currentFile = file;
-        newFileName = file.Name.Split('.')[0];// Открыть модальное окно для ввода нового имени файла
+        newFileName = file.decoded.Name.Split('.')[0];// Открыть модальное окно для ввода нового имени файла
         await modal.ShowAsync();
     }
 
@@ -133,7 +135,7 @@
     {
         HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, User.HttpClient.BaseAddress + APIUrl.FileAPI.download);
         request.Headers.Add("Login",Encoding.UTF8.GetString(User.Login));
-        request.Headers.Add("Path", file.Road);
+        request.Headers.Add("Path", file.encoded.Road);
         request.Headers.Add("Authorization", "Bearer " + User.Jwt);
         var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
         if (response.IsSuccessStatusCode)
@@ -146,7 +148,7 @@
     private void DeleteFile(FileInfo file)
     {
         files.Remove(file);
-        ShowMessage(file.Name);
+        ShowMessage(file.encoded.Name);
         // Здесь должен быть код для удаления файла
     }
 
@@ -167,38 +169,35 @@
     //Переход по папкам на сервере
     private async Task GoToFolder(FileInfo file)
     {
-
-
         HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, User.HttpClient.BaseAddress + APIUrl.DataBaseAPI.getData);
         request.Headers.Add("Login", Encoding.UTF8.GetString(User.Login));
-        request.Headers.Add("Path", await file.GetEncodedPath());
-        request.Headers.Add("Authorization", "Bearer " + User.Jwt);
+        request.Headers.Add("Path", file.encoded.Road);
         var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
         if (response.IsSuccessStatusCode)
         {
-            byte[] buffer = new byte[0];
-            buffer = await response.Content.ReadAsByteArrayAsync();
-            var responseBody = Encoding.UTF8.GetString(buffer);
-            var status = responseBody.Split(";")[0].Split('.');
-            responseBody = responseBody.Substring(responseBody.IndexOf(';') + 1);
-            if (status[0] != "problem")
+            List<RoutesModel>? routes = new List<RoutesModel>();
+            routes.AddRange(JsonConvert.DeserializeObject <List<RoutesModel>>(await response.Content.ReadAsStringAsync()));
+
+            if(routes != null)
             {
-                files = Parse(responseBody);
+                foreach(var item in routes)
+                {
+                    filesystem.Add(item);
+                }
+                foreach(var item in filesystem[route])
+                {
+                    FileInfo info = new FileInfo(
+                            item.Value.PathToHeadStr(),
+                            item.Value.Name,
+                            JS,
+                            item.Value.IsFolder
+                            );
+                    await info.Decode();
+                    files.Add(info);
+                }
             }
         }
     }
-
-    private List<FileInfo> Parse(string sourse)
-    {
-        string[] files = sourse.Split('\n');
-        List<FileInfo> filesInfo = new List<FileInfo>();
-        foreach(var file in files)
-        {
-            filesInfo.Add(new FileInfo(file.Split('?')[0], Convert.ToBoolean(file.Split('?')[1]), JS, User.Key));
-        }
-        return filesInfo;
-    }
-
 
     private async Task RenameFile()
     {
@@ -207,16 +206,22 @@
         // После успешного переименования обновить список файлов
         if (currentFile.IsFolder)
         {
-            currentFile.Name = newFileName;
+            currentFile.decoded.Name = newFileName;
         }
         else
         {
-            currentFile.Name = newFileName + '.' + currentFile.Name.Split('.')[1];
+            currentFile.decoded.Name = newFileName + '.' + currentFile.decoded.Name.Split('.')[1];
         }
-        Console.WriteLine(currentFile.Name);
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Put,User.HttpClient.BaseAddress+APIUrl.FileAPI.rename);
+        request.Headers.Add("Login", Encoding.UTF8.GetString(User.Login));
+        request.Headers.Add("Path", route);
+        request.Headers.Add("Name", currentFile.encoded.Name);
+        await currentFile.Encode();
+        Console.WriteLine(currentFile.decoded.Name);
 
         await modal.HideAsync();
     }
+
     private async Task LoadFile(InputFileChangeEventArgs e)
     {
         foreach(var file in e.GetMultipleFiles(100))
@@ -229,7 +234,7 @@
             StreamContent st = new StreamContent(stream);
             var request = new HttpRequestMessage(HttpMethod.Post, User.HttpClient.BaseAddress + APIUrl.FileAPI.upload);
             request.Headers.Add("Login", Encoding.UTF8.GetString(User.Login));
-            request.Headers.Add("Path", host + await encoder.EncodeHash(file.Name, System.Security.Cryptography.SHA1.Create().ComputeHash));
+            request.Headers.Add("Path", route + await encoder.EncodeHash(file.Name, System.Security.Cryptography.SHA1.Create().ComputeHash));
             request.Headers.Add("Authorization", "Bearer " + User.Jwt);
             request.Content = st;
             Console.WriteLine(User.Jwt);
@@ -240,70 +245,69 @@
 
     public class FileInfo
     {
+        public struct Info
+        {
+            public string Name { get; set; }
+            public string Road { get; set; }
+        }
+        public bool IsFolder { get; set; }
         private IJSRuntime JS;
         private byte[] code;
-        public string Name { get; set; }
-        public bool IsFolder { get; set; }
-        public string Road { get; set; }
 
-        public async Task<string> GetEncodedPath()
+        public Info encoded;
+        public Info decoded;
+
+        public FileInfo(string Name, string Road, IJSRuntime js, bool IsFolder = true)
         {
-            if (Road == "\\")
-                return Road;
-            var road = Road.Substring(5);
-            var temp = Road.Split('\\');
-            BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
-            byte[] buffer = new byte[0];
-            foreach (var item in temp)
-            {
-                buffer = Base64UrlTextEncoder.Decode(item);
-                buffer = await encoder.Encode(buffer);
-                road += Encoding.UTF8.GetString(buffer) + '\\';
-            }
-            return road;
-        }
-
-        // Другие свойства файла
-        public FileInfo(string road, IJSRuntime? js, byte[] code){
-            this.JS = js;
-            this.code = code;
-            Road = road.Split(host)[0];
-            int ls = road.LastIndexOf('\\');
-            BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
-            Name =  road.Substring(++ls, road.Length-ls);
-            IsFolder = false; 
-            if (Name.IndexOf('.') == -1){
-                IsFolder = true;
-
-            }
+            encoded.Name = Name;
+            encoded.Road = Road;
+            this.IsFolder = IsFolder; 
+            JS = js;
 
         }
 
-        public FileInfo(string road, bool isFolder, IJSRuntime JS, byte[] code)
+        public async Task<FileInfo> Decode()
         {
-            if (host != road)
+            Modules.Encoder encoder = new Modules.Encoder(JS, code);
+            string[] split = encoded.Road.Split('\\');
+            decoded.Road = "";
+            for(int i = 0;i<split.Length;i++)
             {
-                Road = road.Split("Cloud\\")[1];
-                int ls = road.LastIndexOf('\\');
-                var temp = Road.Split('\\');
-                Road = host;
-                BlazorApp3.Client.Modules.Encoder encoder = new BlazorApp3.Client.Modules.Encoder(JS, code);
-                byte[] buffer = new byte[0];
-                foreach(var item in temp)
+                decoded.Road+=await encoder.Decode(split[i]);
+                if (i < split.Length - 1)
                 {
-                    buffer = Base64UrlTextEncoder.Decode(item);
-                    buffer = encoder.Decode(buffer).Result;
-                    Road += Encoding.UTF8.GetString(buffer) + '\\';
+                    decoded.Road += '\\';
+                }else if (IsFolder)
+                {
+                    decoded.Road += '\\';
                 }
-                Name += Encoding.UTF8.GetString(buffer);
-                IsFolder = false;
-            }
-            else {
-                Name = "";
-                Road = "\\";
             }
 
+            decoded.Name = await encoder.Decode(decoded.Name);
+            return this;
         }
+        public async Task<FileInfo> Encode()
+        {
+            Modules.Encoder encoder = new Modules.Encoder(JS, code);
+            string[] split = decoded.Road.Split('\\');
+            encoded.Road = "";
+            for (int i = 0; i < split.Length; i++)
+            {
+                encoded.Road += await encoder.Encode(split[i]);
+                if (i < split.Length - 1)
+                {
+                    encoded.Road += '\\';
+                }
+                else if (IsFolder)
+                {
+                    encoded.Road += '\\';
+                }
+            }
+
+            encoded.Name = await encoder.Encode(decoded.Name);
+            return this;
+        }
+
     }
 }
 

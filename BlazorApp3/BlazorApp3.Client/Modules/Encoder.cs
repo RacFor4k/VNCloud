@@ -71,13 +71,13 @@ namespace BlazorApp3.Client.Modules
 
         public async Task<string> Encode(string buffer)
         {
-            buffer = Base64UrlTextEncoder.Encode(Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("encryptAES", [Encoding.UTF8.GetBytes(buffer), _encoderKey, _encoderKey])));
+            buffer = (await _runtime.InvokeAsync<string>("encryptAES", [Encoding.UTF8.GetBytes(buffer), _encoderKey, _encoderKey])));
             return buffer;
         }
 
         public async Task<string> Decode(string buffer)
         {
-            buffer = Base64UrlTextEncoder.Encode(Encoding.UTF8.GetBytes(await _runtime.InvokeAsync<string>("dencryptAES", [Encoding.UTF8.GetBytes(buffer), _encoderKey, _encoderKey])));
+            buffer = (await _runtime.InvokeAsync<string>("dencryptAES", [Encoding.UTF8.GetBytes(buffer), _encoderKey, _encoderKey])));
             return buffer;
         }
 

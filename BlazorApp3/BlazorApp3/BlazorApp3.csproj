@@ -17,7 +17,6 @@
   <ItemGroup>
     <Content Include="Models\AccountModel.cs" />
     <Content Include="Models\HttpHelper.cs" />
-    <Content Include="Models\RoutesModel.cs" />
   </ItemGroup>
 
   <ItemGroup>
