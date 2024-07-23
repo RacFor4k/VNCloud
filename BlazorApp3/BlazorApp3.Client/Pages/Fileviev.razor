@@ -94,17 +94,18 @@
                 User.Login = Encoding.UTF8.GetBytes(await JS.InvokeAsync<string>("sessionStorage.getItem", "userLogin").ConfigureAwait(false));
                 User.Jwt = await JS.InvokeAsync<string>("sessionStorage.getItem", "userjwt").ConfigureAwait(false);
                 User.Key = Encoding.UTF8.GetBytes(await JS.InvokeAsync<string>("sessionStorage.getItem", "userKey").ConfigureAwait(false));
-                Console.WriteLine(User.Jwt);
+                User.Encoder = new Modules.Encoder(JS, User.Key);
             }
             catch
             {
                 await JS.InvokeVoidAsync("sessionStorage.removeItem", "userLogin").ConfigureAwait(false);
                 await JS.InvokeVoidAsync("sessionStorage.removeItem", "userJwt").ConfigureAwait(false);
                 await JS.InvokeVoidAsync("sessionStorage.removeItem", "userKey").ConfigureAwait(false);
+                Navigation.NavigateTo("/authenticetion");
             }
 
         }
-        await GoToFolder(await new FileInfo(route, route, JS, true).Encode());
+        await GoToFolder(FileInfo.GetFromDecoded(route, route, JS, true));
         await base.OnAfterRenderAsync(firstRender);
     }
 
@@ -186,13 +187,12 @@
                 }
                 foreach(var item in filesystem[route])
                 {
-                    FileInfo info = new FileInfo(
+                    FileInfo info = FileInfo.GetFromEncoded(
                             item.Value.PathToHeadStr(),
                             item.Value.Name,
                             JS,
                             item.Value.IsFolder
                             );
-                    await info.Decode();
                     files.Add(info);
                 }
             }
@@ -226,15 +226,14 @@
     {
         foreach(var file in e.GetMultipleFiles(100))
         {
-            var encoder = new Modules.Encoder(JS, User.Key);
             byte[] buff = new byte[0];
             MemoryStream stream = new MemoryStream();
             await file.OpenReadStream(long.MaxValue).CopyToAsync(stream);
-            stream = new MemoryStream(await encoder.Encode(stream.ToArray()));
+            stream = new MemoryStream(await User.Encoder.Encode(stream.ToArray()));
             StreamContent st = new StreamContent(stream);
             var request = new HttpRequestMessage(HttpMethod.Post, User.HttpClient.BaseAddress + APIUrl.FileAPI.upload);
             request.Headers.Add("Login", Encoding.UTF8.GetString(User.Login));
-            request.Headers.Add("Path", route + await encoder.EncodeHash(file.Name, System.Security.Cryptography.SHA1.Create().ComputeHash));
+            request.Headers.Add("Path", route + await User.Encoder.EncodeHash(file.Name, System.Security.Cryptography.SHA1.Create().ComputeHash));
             request.Headers.Add("Authorization", "Bearer " + User.Jwt);
             request.Content = st;
             Console.WriteLine(User.Jwt);
@@ -251,29 +250,44 @@
             public string Road { get; set; }
         }
         public bool IsFolder { get; set; }
-        private IJSRuntime JS;
-        private byte[] code;
 
         public Info encoded;
         public Info decoded;
 
-        public FileInfo(string Name, string Road, IJSRuntime js, bool IsFolder = true)
+        public FileInfo()
         {
-            encoded.Name = Name;
-            encoded.Road = Road;
-            this.IsFolder = IsFolder; 
-            JS = js;
+            encoded.Name = "";
+            encoded.Road = "";
+            this.IsFolder = true;
+        }
 
+        public static FileInfo GetFromEncoded(string Name, string Road, IJSRuntime js, bool IsFolder = true)
+        {
+            FileInfo Info = new FileInfo();
+            Info.encoded.Name = Name;
+            Info.encoded.Road = Road;
+            Info.IsFolder = IsFolder;
+            Info.Decode(); 
+            return Info;
+        }
+
+        public static FileInfo GetFromDecoded(string Name, string Road, IJSRuntime js, bool IsFolder = true)
+        {
+            FileInfo Info = new FileInfo();
+            Info.decoded.Name = Name;
+            Info.decoded.Road = Road;
+            Info.IsFolder = IsFolder;
+            Info.Encode();
+            return Info;
         }
 
         public async Task<FileInfo> Decode()
         {
-            Modules.Encoder encoder = new Modules.Encoder(JS, code);
             string[] split = encoded.Road.Split('\\');
             decoded.Road = "";
             for(int i = 0;i<split.Length;i++)
             {
-                decoded.Road+=await encoder.Decode(split[i]);
+                decoded.Road+=await User.Encoder.Decode(split[i]);
                 if (i < split.Length - 1)
                 {
                     decoded.Road += '\\';
@@ -283,19 +297,18 @@
                 }
             }
 
-            decoded.Name = await encoder.Decode(decoded.Name);
+            decoded.Name = await User.Encoder.Decode(decoded.Name);
             return this;
         }
         public async Task<FileInfo> Encode()
         {
-            Modules.Encoder encoder = new Modules.Encoder(JS, code);
             string[] split = decoded.Road.Split('\\');
             encoded.Road = "";
             for (int i = 0; i < split.Length; i++)
             {
-                encoded.Road += await encoder.Encode(split[i]);
+                encoded.Road += await User.Encoder.Encode(split[i]);
                 if (i < split.Length - 1)
-                {
+                { 
                     encoded.Road += '\\';
                 }
                 else if (IsFolder)
@@ -304,7 +317,7 @@
                 }
             }
 
-            encoded.Name = await encoder.Encode(decoded.Name);
+            encoded.Name = await User.Encoder.Encode(decoded.Name);
             return this;
         }
 

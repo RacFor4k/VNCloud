@@ -27,10 +27,10 @@ namespace BlazorApp3.Modules
         public static async Task<List<AccountModel>> SearchAllData()
         {
             string sql = "select * from accounts;";
-            var temp = _data.LoadData<AccountModel, dynamic>(sql, new { }, _config);
-            if (temp.Result.Count == 0)
+            var temp = await _data.LoadData<AccountModel, dynamic>(sql, new { }, _config);
+            if (temp == null || temp.Count == 0)
                 throw (new Exception("nothing found"));
-            return temp.Result;
+            return temp;
         }
         /// <summary>
         /// Возвращает данные аккаунта по логину
@@ -41,7 +41,7 @@ namespace BlazorApp3.Modules
             var login = Convert.ToBase64String(btlogin);
             string sql = "select * from accounts where login = @login;";
             var temp = await _data.LoadData<AccountModel, dynamic>(sql, new { login }, _config);
-            if (temp.Count == 0)
+            if (temp == null || temp.Count == 0)
                 throw (new Exception("nothing found"));
             return temp;
         }
@@ -50,7 +50,7 @@ namespace BlazorApp3.Modules
         {
             string sql = "select * from accounts where email = @email;";
             var temp = await _data.LoadData<AccountModel, dynamic>(sql, new { email }, _config);
-            if (temp.Count == 0)
+            if (temp == null || temp.Count == 0)
                 throw (new Exception("nothing found"));
             return temp;
         }
@@ -62,10 +62,10 @@ namespace BlazorApp3.Modules
         public static async Task<List<RoutesModel>> SearchData(int parentId)
         {
             string sql = "select * from routes where parentId = @parentId;";
-            var temp = _data.LoadData<RoutesModel, dynamic>(sql, new { parentId }, _config);
-            if (temp.Result.Count == 0)
+            var temp = await _data.LoadData<RoutesModel, dynamic>(sql, new { parentId }, _config);
+            if (temp == null || temp.Count == 0)
                 throw (new Exception("nothing found"));
-            return temp.Result;
+            return temp;
         }
         /// <summary>
         /// Добавляет аккаунт в базу данных(возвращает строку с ошибкой, если не получилось)
@@ -115,7 +115,7 @@ namespace BlazorApp3.Modules
         /// <param name="id"></param>
         /// <param name="nametable"></param>
         /// <returns></returns>
-        public static async Task<string> DeleteData(int id, string nametable)
+        public static async Task<string?> DeleteData(int id, string nametable)
         {
             try
             {

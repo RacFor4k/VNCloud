@@ -13,5 +13,7 @@ namespace BlazorApp3.Client.Modules
         public static string? Jwt { get; set; }
         public static byte[] Login { get; set; }
         public static byte[] Key { get; set; }
+
+        public static Modules.Encoder Encoder { get; set; }
     }
 }

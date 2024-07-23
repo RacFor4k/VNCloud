@@ -14,9 +14,9 @@ using BlazorApp3.Models;
 using Microsoft.EntityFrameworkCore.Storage;
 namespace BlazorApp3.Controllers
 {
-	[Route("api/[controller]")]
+	[Route("api/DataBase")]
 	[ApiController]
-	public class DataBaseoldController : ControllerBase
+	public class DataBaseLegacyController : ControllerBase
 	{
 
 		private string CreateJWT(string login)
@@ -66,7 +66,7 @@ namespace BlazorApp3.Controllers
 			return StatusCode(404);
 		}
 
-		[HttpGet("GetData")]
+		[HttpGet("GetDataOld")]
 		//[Authorize]
 		public async Task<IActionResult> GetData()
 		{
