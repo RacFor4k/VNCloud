@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Hosting;
+using System.Net.WebSockets;
 using System.Text;
 
 namespace BlazorApp3.Controllers
@@ -88,6 +89,78 @@ namespace BlazorApp3.Controllers
             if (await SQLquery.CreateData(SQLquery.SearchData(login).Result[0].Id, path) != null)
                 return Problem("Can't add file to database");
             return Ok();
+        }
+
+        [HttpGet("ws/upload")]
+        public async Task<IActionResult> WebSocket()
+        {
+            if (HttpContext.WebSockets.IsWebSocketRequest)
+            {
+                using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+                return await ProcessWebSocket(webSocket);
+            }
+            else
+            {
+                return BadRequest("WebSocket request expected.");
+            }
+
+            return Ok();
+        }
+
+        private async Task<IActionResult> ProcessWebSocket(WebSocket webSocket)
+        {
+            var buffer = new byte[1024];
+            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            if (result.MessageType == WebSocketMessageType.Text)
+            {
+                // Handle received data (e.g., deserialize and process SocketData)
+                var receivedData = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                SocketData socketData = new SocketData(receivedData);
+
+
+                byte[] login;
+                string path;
+                string fileName;
+                try
+                {
+                    login = Encoding.UTF8.GetBytes(socketData.Headers["Login"]);
+                    path = socketData.Headers["Path"];
+                    fileName = socketData.Headers["FileName"];
+                }
+                catch { return BadRequest("Bad account info"); }
+                string filePath = Vars.Path(login) + path + fileName;
+                Directory.CreateDirectory(filePath.Substring(0, filePath.LastIndexOf('\\') + 1));
+                using (FileStream file = new FileStream(filePath, FileMode.Create))
+                {
+                    byte[] chunk = new byte[socketData.Content.ChunkSize];
+                    long RemSize = socketData.Content.Lenght;
+                    while(RemSize >= socketData.Content.ChunkSize)
+                    {
+                        RemSize -= (await webSocket.ReceiveAsync(new ArraySegment<byte>(chunk), CancellationToken.None)).Count;
+                        file.Write(chunk);
+                    }
+                    if (RemSize > 0)
+                    {
+                        chunk = new byte[RemSize];
+                        RemSize -= (await webSocket.ReceiveAsync(new ArraySegment<byte>(chunk), CancellationToken.None)).Count;
+                        file.Write(chunk);
+                    }
+                    file.Close();
+                    var info = new FileInfo(filePath);
+                    try
+                    {
+                        info.CreationTime = DateTime.Parse(socketData.Headers["FileCreationTime"]);
+                        info.Attributes = (FileAttributes)Convert.ToInt32(socketData.Headers["FileAttributes"]);
+                    }
+                    catch
+                    {
+                    }
+                }
+                if (await SQLquery.CreateData(SQLquery.SearchData(login).Result[0].Id, path) != null)
+                    return Problem("Can't add file to database");
+                return Ok();
+            }
+            return BadRequest();
         }
 
         //Удаление файла

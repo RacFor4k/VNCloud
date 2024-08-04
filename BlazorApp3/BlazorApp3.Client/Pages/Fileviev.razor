@@ -14,6 +14,7 @@
 @using System.Text.Json.Nodes
 @using System.Text
 @using System.Net.Mime
+@using System.Net.WebSockets
 
 
 <Modal @ref="modal" Title="Modal title">
@@ -226,19 +227,54 @@
     {
         foreach(var file in e.GetMultipleFiles(100))
         {
-            byte[] buff = new byte[0];
-            MemoryStream stream = new MemoryStream();
-            await file.OpenReadStream(long.MaxValue).CopyToAsync(stream);
-            stream = new MemoryStream(await User.Encoder.Encode(stream.ToArray()));
-            StreamContent st = new StreamContent(stream);
-            var request = new HttpRequestMessage(HttpMethod.Post, User.HttpClient.BaseAddress + APIUrl.FileAPI.upload);
-            request.Headers.Add("Login", Encoding.UTF8.GetString(User.Login));
-            request.Headers.Add("Path", route + await User.Encoder.EncodeHash(file.Name, System.Security.Cryptography.SHA1.Create().ComputeHash));
-            request.Headers.Add("Authorization", "Bearer " + User.Jwt);
-            request.Content = st;
-            Console.WriteLine(User.Jwt);
+            ///Old Code
+            ///
+            /// byte[] buff = new byte[0];
+            /// MemoryStream stream = new MemoryStream();
+            /// await file.OpenReadStream(long.MaxValue).CopyToAsync(stream);
+            /// stream = new MemoryStream(await User.Encoder.Encode(stream.ToArray()));
+            /// StreamContent st = new StreamContent(stream);
+            /// var request = new HttpRequestMessage(HttpMethod.Post, User.HttpClient.BaseAddress + APIUrl.FileAPI.upload);
+            /// request.Headers.Add("Login", Encoding.UTF8.GetString(User.Login));
+            /// request.Headers.Add("Path", route + await User.Encoder.EncodeHash(file.Name, System.Security.Cryptography.SHA1.Create().ComputeHash));
+            /// request.Headers.Add("Authorization", "Bearer " + User.Jwt);
+            /// request.Content = st;
+            /// Console.WriteLine(User.Jwt);
+            ///
+            /// var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
 
-            var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
+            var webSocketUrl = new Uri("wss://your-websocket-server.com/socket");
+            using var webSocket = new ClientWebSocket();
+
+            try
+            {
+                await webSocket.ConnectAsync(webSocketUrl, CancellationToken.None);
+                SocketData data = new SocketData();
+                data.Content.Type = Models.ContentType.Stream;
+                data.Content.Lenght = file.Size;
+                data.Content.ChunkSize = 1024;
+                data.Headers.Add("Login", Encoding.UTF8.GetString(User.Login));
+                data.Headers.Add("Path", route);
+                data.Headers.Add("FileName", file.Name);
+                await webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(data.ToString())), WebSocketMessageType.Text, true, CancellationToken.None);
+                byte[] chunk = new byte[data.Content.ChunkSize];
+                long RemSize = data.Content.Lenght;
+                while (RemSize >= data.Content.ChunkSize)
+                {
+                    await webSocket.SendAsync(new ArraySegment<byte>(chunk), WebSocketMessageType.Binary, true, CancellationToken.None);
+                    RemSize -= data.Content.ChunkSize;
+                }
+                if (RemSize > 0)
+                {
+                    chunk = new byte[RemSize];
+                    await webSocket.ReceiveAsync(new ArraySegment<byte>(chunk), CancellationToken.None);
+                }
+            }
+            catch
+            {
+                
+            }
+
         }
     }
 
