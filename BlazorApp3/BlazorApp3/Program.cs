@@ -37,6 +37,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddBlazorBootstrap();
 
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -55,6 +56,8 @@ else
 app.MapControllers();
 
 app.UseHttpsRedirection();
+
+app.UseWebSockets();
 
 app.UseStaticFiles();
 app.UseAntiforgery();

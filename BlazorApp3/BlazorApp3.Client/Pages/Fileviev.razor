@@ -243,7 +243,7 @@
             ///
             /// var response = await User.HttpClient.SendAsync(request).ConfigureAwait(false);
 
-            var webSocketUrl = new Uri("wss://your-websocket-server.com/socket");
+            var webSocketUrl = new Uri("wss://localhost:7225/" +APIUrl.FileAPI.upload + "/ws");
             using var webSocket = new ClientWebSocket();
 
             try
@@ -257,22 +257,25 @@
                 data.Headers.Add("Path", route);
                 data.Headers.Add("FileName", file.Name);
                 await webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(data.ToString())), WebSocketMessageType.Text, true, CancellationToken.None);
+                var fileStream = file.OpenReadStream(long.MaxValue);
                 byte[] chunk = new byte[data.Content.ChunkSize];
                 long RemSize = data.Content.Lenght;
                 while (RemSize >= data.Content.ChunkSize)
                 {
+                    await fileStream.ReadAsync(chunk, 0, (int)data.Content.ChunkSize);
                     await webSocket.SendAsync(new ArraySegment<byte>(chunk), WebSocketMessageType.Binary, true, CancellationToken.None);
                     RemSize -= data.Content.ChunkSize;
                 }
                 if (RemSize > 0)
                 {
                     chunk = new byte[RemSize];
-                    await webSocket.ReceiveAsync(new ArraySegment<byte>(chunk), CancellationToken.None);
+                    await fileStream.ReadAsync(chunk, 0, (int)RemSize);
+                    await webSocket.SendAsync(new ArraySegment<byte>(chunk), WebSocketMessageType.Binary, true, CancellationToken.None);
                 }
             }
-            catch
+            catch(Exception ex)
             {
-                
+                Console.WriteLine(ex.Message);
             }
 
         }

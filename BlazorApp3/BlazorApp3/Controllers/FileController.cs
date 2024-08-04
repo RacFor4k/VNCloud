@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using System.Net.WebSockets;
 using System.Text;
 
@@ -91,20 +92,22 @@ namespace BlazorApp3.Controllers
             return Ok();
         }
 
-        [HttpGet("ws/upload")]
-        public async Task<IActionResult> WebSocket()
+        [Route("upload/ws")]
+        public async Task WebSocket()
         {
             if (HttpContext.WebSockets.IsWebSocketRequest)
             {
                 using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                return await ProcessWebSocket(webSocket);
+                var ip = HttpContext.Connection?.RemoteIpAddress?.ToString();
+                Console.WriteLine(ip);
+                await ProcessWebSocket(webSocket);
             }
             else
             {
-                return BadRequest("WebSocket request expected.");
+                return;
             }
 
-            return Ok();
+            Ok();
         }
 
         private async Task<IActionResult> ProcessWebSocket(WebSocket webSocket)
@@ -155,6 +158,7 @@ namespace BlazorApp3.Controllers
                     catch
                     {
                     }
+                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
                 }
                 if (await SQLquery.CreateData(SQLquery.SearchData(login).Result[0].Id, path) != null)
                     return Problem("Can't add file to database");

@@ -1,4 +1,5 @@
-﻿using System.Security.Authentication;
+﻿using Newtonsoft.Json;
+using System.Security.Authentication;
 using System.Text;
 using System.Text.Json;
 
@@ -19,16 +20,21 @@ namespace BlazorApp3.Models
         {
             Parse(stringObj);
         }
+        public SocketData()
+        {
+            Headers = new Dictionary<string, string>();
+            Content = new Content();
+        }
 
         public override string ToString()
         {
-            return JsonSerializer.Serialize(this);
+            return JsonConvert.SerializeObject(this);
         }
 
         public void Parse(string stringObj)
         {
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var parsed = JsonSerializer.Deserialize<SocketData>(stringObj, options);
+            var parsed = JsonConvert.DeserializeObject<SocketData>(stringObj);
             Headers = parsed.Headers;
             Content = parsed.Content;
         }
