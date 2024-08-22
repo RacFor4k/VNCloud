@@ -13,9 +13,11 @@ namespace BlazorApp3.Client.Models
 
         public bool IsFolder;
 
-        public ClientFilesystem(string name, bool isfolder = true)
+        public ClientFilesystem(string name, ClientFilesystem? parent = null, bool isfolder = true)
         {
-           Name = name;
+            Name = name;
+            Parent = parent;
+            IsFolder = isfolder;
         }
 
         public new ClientFilesystem? Get(string key)
@@ -24,43 +26,26 @@ namespace BlazorApp3.Client.Models
             {
                 ClientFilesystem? res = null;
                 string[] split = key.Split('\\');
-                for (int i = 0; i < split.Length; i++)
+                for (int i = 1; i < split.Length; i++)
                 {
                     if (this[split[i]] != null)
                         res = this[split[i]];
                     return res;
                 }
             }
-            return this[key];
+            return this;
         }
         public void Add(RoutesModel route)
         {
             List<RoutesModel> names = new List<RoutesModel>();
             string[] split = route.Route.Split("\\");
             int i;
-            for (i = 0; i < split.Length; i++)
-            {   
-                names.Add(new RoutesModel
-                {
-                    Route = split[i],
-                    IsFolder = i < split.Length - 1 || route.IsFolder,
-                });
-            }
-            var Head = GetHead();
-            ClientFilesystem? HeadChild = Head;
-            ClientFilesystem Temp = this;
-            ClientFilesystem PastTemp = Temp;
-            i = 0;
-            do
+            ClientFilesystem it = this;
+            for (i = 1; i < split.Length; i++)
             {
-                HeadChild = Head[names[i].Route];
-            } while (HeadChild != null);
-            for (; i < names.Count; i++)
-            {
-                PastTemp = Temp;
-                Temp.Add(names[i].Route, new ClientFilesystem(names[i].Route, names[i].IsFolder));
-                Temp = Temp[names[i].Route];
-                Temp.Parent = PastTemp;
+                if(!it.ContainsKey(split[i]))
+                    it.Add(split[i],new ClientFilesystem(split[i], it, i != split.Length-1));
+                it = it[split[i]];
             }
         }
 
@@ -102,7 +87,7 @@ namespace BlazorApp3.Client.Models
         }
         public string PathToHeadStr()
         {
-            string Path = Name;
+            string Path = "host\\"+Name;
             ClientFilesystem? Head = Parent;
             if (Head == null)
             {

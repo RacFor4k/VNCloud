@@ -13,7 +13,7 @@
     "https": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "https://localhost:7225/aunt",
+      "launchUrl": "https://localhost:7225/authenticetion",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },

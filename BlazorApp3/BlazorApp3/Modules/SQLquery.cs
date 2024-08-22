@@ -61,7 +61,7 @@ namespace BlazorApp3.Modules
         /// <returns></returns>
         public static async Task<List<RoutesModel>> SearchData(int parentId)
         {
-            string sql = "select * from routes where parentId = @parentId;";
+            string sql = "select * from urls where parentId = @parentId;";
             var temp = await _data.LoadData<RoutesModel, dynamic>(sql, new { parentId }, _config);
             if (temp == null || temp.Count == 0)
                 throw (new Exception("nothing found"));
@@ -94,12 +94,13 @@ namespace BlazorApp3.Modules
         /// <param name="idParent"></param>
         /// <param name="url"></param>
         /// <returns></returns>
-        public static async Task<string?> CreateData(int idParent, string url, bool isFolder = false)
+        public static async Task<string?> CreateData(int idParent, string url, short isFolder = 0)
         {
             try
             {
-                string sql = "insert into routes (idParent, url, isFolder) values (@idParent, @url, @isFolder);";
-                await _data.SaveData(sql, new { idParent, url, isFolder}, _config);
+                //"INSERT INTO `cloud_database`.`urls` (`url`, `isFolder`, `parentId`) VALUES ('3333', '0', '5');";
+                string sql = "insert into cloud_database.urls (route, isFolder, parentId) values (@route, @isFolder, @parentID);";
+                await _data.SaveData(sql, new {route = url, parentID = Convert.ToString(idParent), isFolder = Convert.ToString(isFolder)}, _config);
                 return null;
 
             }
@@ -110,7 +111,7 @@ namespace BlazorApp3.Modules
             }
         }
         /// <summary>
-        /// Удаление данных из таблицы по id (nametable = accounts для аккаунтов,nametable = routes для путей)(возвращает строку с ошибкой, если не получилось)
+        /// Удаление данных из таблицы по id (nametable = accounts для аккаунтов,nametable = urls для путей)(возвращает строку с ошибкой, если не получилось)
         /// </summary>
         /// <param name="id"></param>
         /// <param name="nametable"></param>

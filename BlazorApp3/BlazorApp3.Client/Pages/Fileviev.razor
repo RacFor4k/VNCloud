@@ -77,7 +77,7 @@
     static string route ="host";
     private FileInfo currentFile;
     private string newFileName;
-    private ClientFilesystem filesystem = new ClientFilesystem("Host");
+    private ClientFilesystem filesystem = new ClientFilesystem("host");
 
     protected override async Task OnInitializedAsync()
     {
@@ -104,9 +104,9 @@
                 await JS.InvokeVoidAsync("sessionStorage.removeItem", "userKey").ConfigureAwait(false);
                 Navigation.NavigateTo("/authenticetion");
             }
-
+            await GoToFolder(FileInfo.GetFromDecoded(route, route, JS, true));
         }
-        await GoToFolder(FileInfo.GetFromDecoded(route, route, JS, true));
+
         await base.OnAfterRenderAsync(firstRender);
     }
 
@@ -186,16 +186,19 @@
                 {
                     filesystem.Add(item);
                 }
-                foreach(var item in filesystem[route])
+                files.Clear();
+                foreach(var item in filesystem.Get(route))
                 {
-                    FileInfo info = FileInfo.GetFromEncoded(
-                            item.Value.PathToHeadStr(),
+                    FileInfo info = FileInfo.GetFromDecoded(
                             item.Value.Name,
+                            item.Value.PathToHeadStr(),
                             JS,
                             item.Value.IsFolder
+
                             );
                     files.Add(info);
                 }
+                StateHasChanged();
             }
         }
     }
@@ -272,6 +275,7 @@
                     await fileStream.ReadAsync(chunk, 0, (int)RemSize);
                     await webSocket.SendAsync(new ArraySegment<byte>(chunk), WebSocketMessageType.Binary, true, CancellationToken.None);
                 }
+                await GoToFolder(FileInfo.GetFromDecoded(route, route, JS, true));
             }
             catch(Exception ex)
             {

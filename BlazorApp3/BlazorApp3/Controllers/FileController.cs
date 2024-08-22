@@ -160,8 +160,8 @@ namespace BlazorApp3.Controllers
                     }
                     await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
                 }
-                if (await SQLquery.CreateData(SQLquery.SearchData(login).Result[0].Id, path) != null)
-                    return Problem("Can't add file to database");
+                if (await SQLquery.CreateData(SQLquery.SearchData(login).Result[0].Id, path+'\\' + fileName) != null)
+                    Console.WriteLine("Can't add file to database");
                 return Ok();
             }
             return BadRequest();
